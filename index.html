@@ -33,11 +33,22 @@
         .screen.active { display: flex; flex-direction: column; }
         
         .auth-screen {
+            position: fixed;
             justify-content: center;
             align-items: center;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             padding: 16px;
-            overflow: hidden;
+            overflow: hidden !important;
+            overscroll-behavior: none;
+            height: 100vh;
+            height: 100dvh;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding-bottom: 0 !important;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
         .auth-card {
             background: rgba(30, 41, 59, 0.95);
@@ -45,9 +56,12 @@
             padding: 24px 20px;
             width: 100%;
             max-width: 360px;
+            max-height: 90vh;
+            overflow-y: auto;
             border: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
             box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            overscroll-behavior: none;
         }
         .auth-card h1 {
             text-align: center;
@@ -909,7 +923,8 @@
     <div id="authScreen" class="screen auth-screen">
         <div class="auth-card">
             <h1><i class="fas fa-gamepad"></i> Forzes HUB</h1>
-            <p class="subtitle">Вход в мобильное приложение</p>
+            <p class="subtitle" id="authSubtitle">Вход в мобильное приложение</p>
+            
             <form id="mobileAuthForm" autocomplete="off" spellcheck="false" data-lpignore="true">
                 <input type="text" name="fakeusernameremembered" style="display: none;" tabindex="-1" autocomplete="off">
                 <input type="password" name="fakepasswordremembered" style="display: none;" tabindex="-1" autocomplete="off">
@@ -921,11 +936,39 @@
                     <label>Пароль</label>
                     <input type="password" id="mobilePassword" name="password_field" placeholder="Введите пароль" required autocomplete="new-password" readonly onfocus="if(this.readOnly){this.readOnly=false;this.focus();}" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
                 </div>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" id="loginSubmitBtn">
                     <i class="fas fa-sign-in-alt"></i> Войти
                 </button>
                 <div id="mobileAuthError" class="error-msg"></div>
             </form>
+
+            <form id="mobileRegisterForm" autocomplete="off" spellcheck="false" data-lpignore="true" style="display: none;">
+                <input type="text" name="fakeusernameremembered2" style="display: none;" tabindex="-1" autocomplete="off">
+                <input type="password" name="fakepasswordremembered2" style="display: none;" tabindex="-1" autocomplete="off">
+                <div class="form-group">
+                    <label>Имя пользователя</label>
+                    <input type="text" id="regUsername" name="reg_username_field" placeholder="Придумайте имя пользователя" required autocomplete="off" autocapitalize="none" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="regPassword" name="reg_password_field" placeholder="Придумайте пароль" required autocomplete="new-password" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                </div>
+                <div class="form-group">
+                    <label>Повторите пароль</label>
+                    <input type="password" id="regPasswordConfirm" name="reg_password_confirm_field" placeholder="Повторите пароль" required autocomplete="new-password" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                </div>
+                <button type="submit" class="btn btn-primary" id="registerSubmitBtn">
+                    <i class="fas fa-user-plus"></i> Создать аккаунт
+                </button>
+                <div id="mobileRegisterError" class="error-msg"></div>
+            </form>
+
+            <button type="button" id="showRegisterBtn" style="width: 100%; margin-top: 12px; padding: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; cursor: pointer; font-size: 0.9rem;">
+                Нет аккаунта? Зарегистрироваться
+            </button>
+            <button type="button" id="showLoginBtn" style="width: 100%; margin-top: 12px; padding: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; cursor: pointer; font-size: 0.9rem; display: none;">
+                Уже есть аккаунт? Войти
+            </button>
         </div>
     </div>
 
@@ -1555,6 +1598,121 @@
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Войти';
+                }
+            }
+        });
+
+        document.getElementById('showRegisterBtn').addEventListener('click', () => {
+            document.getElementById('mobileAuthForm').style.display = 'none';
+            document.getElementById('mobileRegisterForm').style.display = 'block';
+            document.getElementById('showRegisterBtn').style.display = 'none';
+            document.getElementById('showLoginBtn').style.display = 'block';
+            document.getElementById('authSubtitle').textContent = 'Регистрация нового аккаунта';
+            document.getElementById('mobileAuthError').style.display = 'none';
+        });
+
+        document.getElementById('showLoginBtn').addEventListener('click', () => {
+            document.getElementById('mobileRegisterForm').style.display = 'none';
+            document.getElementById('mobileAuthForm').style.display = 'block';
+            document.getElementById('showLoginBtn').style.display = 'none';
+            document.getElementById('showRegisterBtn').style.display = 'block';
+            document.getElementById('authSubtitle').textContent = 'Вход в мобильное приложение';
+            document.getElementById('mobileRegisterError').style.display = 'none';
+        });
+
+        document.getElementById('mobileRegisterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+            const errorDiv = document.getElementById('mobileRegisterError');
+            const submitBtn = document.getElementById('registerSubmitBtn');
+            
+            errorDiv.style.display = 'none';
+            
+            if (!username || !password || !passwordConfirm) {
+                errorDiv.textContent = 'Заполните все поля';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (username.length < 3) {
+                errorDiv.textContent = 'Имя пользователя слишком короткое (минимум 3 символа)';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (password.length < 4) {
+                errorDiv.textContent = 'Пароль слишком короткий (минимум 4 символа)';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (password !== passwordConfirm) {
+                errorDiv.textContent = 'Пароли не совпадают';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (!firebaseAvailable || !database) {
+                const hasFirebase = await waitForFirebase(5000);
+                if (!hasFirebase) {
+                    errorDiv.innerHTML = 'База данных не подключена.<br><button type="button" onclick="loadFirebaseDynamically().then(() => location.reload());" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(99,102,241,0.2);color:#6366f1;font-size:0.85rem;cursor:pointer;">Попробовать снова</button>';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+            }
+            
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Создание...';
+            }
+            
+            try {
+                const snapshot = await database.ref('users/' + username.toLowerCase()).once('value');
+                const existingUser = snapshot.val();
+                
+                if (existingUser) {
+                    errorDiv.textContent = 'Пользователь с таким именем уже существует';
+                    errorDiv.style.display = 'block';
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Создать аккаунт';
+                    }
+                    return;
+                }
+                
+                const newUser = {
+                    username: username,
+                    password: password,
+                    avatar: 'default',
+                    avatarData: null,
+                    downloadsCount: 0,
+                    likesCount: 0,
+                    favoriteGames: [],
+                    isDeveloper: false,
+                    hasBadge: false,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP,
+                    lastLogin: firebase.database.ServerValue.TIMESTAMP
+                };
+                
+                await database.ref('users/' + username.toLowerCase()).set(newUser);
+                
+                currentUser = newUser;
+                localStorage.setItem('mobile_username', username);
+                localStorage.setItem('mobile_password', password);
+                sessionStorage.setItem('mobile_currentUser', JSON.stringify(newUser));
+                
+                setupMobilePresence(username);
+                navigateTo('profile');
+            } catch (err) {
+                console.error('Mobile register error:', err);
+                errorDiv.textContent = 'Ошибка создания аккаунта. Проверьте интернет и попробуйте снова.';
+                errorDiv.style.display = 'block';
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Создать аккаунт';
                 }
             }
         });
