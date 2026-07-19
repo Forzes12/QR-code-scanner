@@ -282,7 +282,7 @@
         .action-text h3 { font-size: 1.05rem; margin-bottom: 4px; font-weight: 700; }
         .action-text p { font-size: 0.8rem; color: #94a3b8; }
         
-        .comments-screen, .likes-screen {
+        .comments-screen, .likes-screen, .search-screen, .user-profile-screen {
             position: fixed;
             top: 0;
             left: 0;
@@ -294,7 +294,7 @@
             display: none;
             flex-direction: column;
         }
-        .comments-screen.active, .likes-screen.active {
+        .comments-screen.active, .likes-screen.active, .search-screen.active, .user-profile-screen.active {
             display: flex;
         }
         .screen-header {
@@ -340,6 +340,12 @@
             justify-content: center;
             font-size: 18px;
             flex-shrink: 0;
+            overflow: hidden;
+        }
+        .list-item-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         .list-item-meta {
             flex: 1;
@@ -408,6 +414,262 @@
             font-size: 1.1rem;
         }
         
+        .search-box {
+            padding: 0 0 20px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(15,23,42,0.8);
+            color: white;
+            font-size: 1.1rem;
+            outline: none;
+            transition: all 0.3s;
+            min-height: 56px;
+        }
+        .search-box input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .user-card {
+            background: rgba(30, 41, 59, 0.9);
+            border-radius: 18px;
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 80px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        .user-card:active { transform: scale(0.98); background: rgba(99, 102, 241, 0.2); }
+        .user-card-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .user-card-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .user-card-info {
+            flex: 1;
+        }
+        .user-card-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 4px;
+        }
+        .user-card-status {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        .profile-header-mobile {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .profile-header-mobile .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            border: 4px solid rgba(255,255,255,0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            margin: 0 auto 16px;
+            overflow: hidden;
+        }
+        .profile-header-mobile .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-header-mobile .username {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+        .profile-header-mobile .user-status {
+            color: rgba(255,255,255,0.85);
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 1;
+        }
+        .comment-form {
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.9);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-top: 20px;
+        }
+        .comment-form textarea {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(15,23,42,0.8);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            resize: none;
+            min-height: 100px;
+            font-family: inherit;
+        }
+        .comment-form button {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+        .friends-screen, .chat-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            z-index: 2000;
+            padding: 0;
+            display: none;
+            flex-direction: column;
+        }
+        .friends-screen.active, .chat-screen.active {
+            display: flex;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .chat-message {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            word-break: break-word;
+        }
+        .chat-message.sent {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-message.received {
+            align-self: flex-start;
+            background: rgba(30, 41, 59, 0.9);
+            color: #f1f5f9;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-message img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 8px;
+        }
+        .chat-message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+            padding: 12px 20px;
+            background: rgba(30, 41, 59, 0.95);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .chat-input-area textarea {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(15,23,42,0.8);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            resize: none;
+            min-height: 44px;
+            font-family: inherit;
+        }
+        .friend-request-card {
+            background: rgba(30, 41, 59, 0.9);
+            border-radius: 18px;
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+        .friend-request-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .friend-request-actions button {
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-accept {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        .btn-reject {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+        .btn-chat {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-block {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
         .scanner-screen {
             position: fixed;
             top: 0;
@@ -682,6 +944,26 @@
                     </div>
                 </div>
                 
+                <div class="action-card" onclick="showSearch()">
+                    <div class="action-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="action-text">
+                        <h3>Поиск пользователей</h3>
+                        <p>Найти других пользователей</p>
+                    </div>
+                </div>
+                
+                <div class="action-card" onclick="showFriends()">
+                    <div class="action-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <i class="fas fa-user-friends"></i>
+                    </div>
+                    <div class="action-text">
+                        <h3>Друзья</h3>
+                        <p>Управление друзьями и заявки</p>
+                    </div>
+                </div>
+                
                 <div class="action-card" onclick="showLikes()">
                     <div class="action-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
                         <i class="fas fa-heart"></i>
@@ -745,6 +1027,82 @@
         <div class="screen-content">
             <div id="likesList" class="list-container">
                 <div class="loading">Загрузка...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Screen -->
+    <div id="searchScreen" class="screen search-screen">
+        <div class="screen-header">
+            <button class="nav-item" onclick="navigateTo('profile')" style="width: auto; flex-direction: row;">
+                <i class="fas fa-arrow-left"></i>
+                <span>Назад</span>
+            </button>
+            <h2>Поиск пользователей</h2>
+        </div>
+        <div class="screen-content">
+            <div class="search-box">
+                <input type="text" id="userSearchInput" placeholder="Поиск по имени пользователя..." oninput="searchMobileUsers()">
+            </div>
+            <div id="searchResults" class="list-container">
+                <div class="loading">Введите имя для поиска</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Profile Screen -->
+    <div id="userProfileScreen" class="screen user-profile-screen">
+        <div class="screen-header">
+            <button class="nav-item" onclick="closeUserProfile()" style="width: auto; flex-direction: row;">
+                <i class="fas fa-arrow-left"></i>
+                <span>Назад</span>
+            </button>
+            <h2>Профиль</h2>
+        </div>
+        <div class="screen-content">
+            <div id="userProfileContent"></div>
+        </div>
+    </div>
+
+    <!-- Friends Screen -->
+    <div id="friendsScreen" class="screen friends-screen">
+        <div class="screen-header">
+            <button class="nav-item" onclick="navigateTo('profile')" style="width: auto; flex-direction: row;">
+                <i class="fas fa-arrow-left"></i>
+                <span>Назад</span>
+            </button>
+            <h2>Друзья</h2>
+        </div>
+        <div class="screen-content">
+            <div id="friendsTabs" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button onclick="showFriendsTab('friends')" id="tab-friends" style="flex: 1; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(99,102,241,0.2); color: white; font-size: 1rem; cursor: pointer;">Друзья</button>
+                <button onclick="showFriendsTab('requests')" id="tab-requests" style="flex: 1; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #94a3b8; font-size: 1rem; cursor: pointer;">Заявки</button>
+                <button onclick="showFriendsTab('blacklist')" id="tab-blacklist" style="flex: 1; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #94a3b8; font-size: 1rem; cursor: pointer;">ЧС</button>
+            </div>
+            <div id="friendsList" class="list-container"></div>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chatScreen" class="screen chat-screen">
+        <div class="screen-header">
+            <button class="nav-item" onclick="closeChat()" style="width: auto; flex-direction: row;">
+                <i class="fas fa-arrow-left"></i>
+                <span>Назад</span>
+            </button>
+            <h2 id="chatTitle">Чат</h2>
+        </div>
+        <div class="screen-content" style="display: flex; flex-direction: column;">
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-input-area">
+                <textarea id="chatInput" placeholder="Сообщение..." rows="1"></textarea>
+                <input type="file" id="chatImageInput" accept="image/*" style="display: none;" onchange="sendChatImage(event)">
+                <button onclick="document.getElementById('chatImageInput').click()" style="padding: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; cursor: pointer;">
+                    <i class="fas fa-image"></i>
+                </button>
+                <button onclick="sendChatMessage()" style="padding: 12px 20px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 12px; cursor: pointer; font-weight: 700;">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -819,6 +1177,14 @@
         let commentsListener = null;
         let commentsCountListener = null;
         let currentScreen = 'auth';
+        let currentProfileUsername = null;
+        let userProfileCommentsListener = null;
+        let friendsListener = null;
+        let requestsListener = null;
+        let blacklistListener = null;
+        let chatListener = null;
+        let currentChatUser = null;
+        let currentFriendsTab = 'friends';
 
         function initFirebase() {
             if (firebaseAvailable && database) {
@@ -960,13 +1326,40 @@
                     commentsListener = null;
                 }
             }
+            if (currentScreen === 'user-profile' && screen !== 'user-profile') {
+                if (userProfileCommentsListener) {
+                    userProfileCommentsListener.off();
+                    userProfileCommentsListener = null;
+                }
+            }
+            if (currentScreen === 'chat' && screen !== 'chat') {
+                if (chatListener) {
+                    chatListener.off();
+                    chatListener = null;
+                }
+                currentChatUser = null;
+            }
+            if (currentScreen === 'friends' && screen !== 'friends') {
+                if (friendsListener) {
+                    friendsListener.off();
+                    friendsListener = null;
+                }
+                if (requestsListener) {
+                    requestsListener.off();
+                    requestsListener = null;
+                }
+                if (blacklistListener) {
+                    blacklistListener.off();
+                    blacklistListener = null;
+                }
+            }
             showScreen(screen);
             window.location.hash = '#/' + screen;
         }
         
         function handleRoute() {
             const hash = window.location.hash.replace('#/', '') || '';
-            const validScreens = ['auth', 'profile', 'scanner', 'comments', 'likes'];
+            const validScreens = ['auth', 'profile', 'scanner', 'comments', 'likes', 'search', 'user-profile', 'friends', 'chat'];
             let screen = validScreens.includes(hash) ? hash : 'auth';
             
             if (!currentUser && screen !== 'auth') {
@@ -979,6 +1372,12 @@
                 if (commentsListener) {
                     commentsListener.off();
                     commentsListener = null;
+                }
+            }
+            if (currentScreen === 'user-profile' && screen !== 'user-profile') {
+                if (userProfileCommentsListener) {
+                    userProfileCommentsListener.off();
+                    userProfileCommentsListener = null;
                 }
             }
             
@@ -1331,6 +1730,595 @@
             return str.replace(/[.#$[\]]/g, '_');
         }
 
+        async function showSearch() {
+            if (!currentUser) return;
+            navigateTo('search');
+            const results = document.getElementById('searchResults');
+            results.innerHTML = '<div class="loading">Введите имя для поиска</div>';
+            document.getElementById('userSearchInput').value = '';
+        }
+
+        async function searchMobileUsers() {
+            const query = document.getElementById('userSearchInput').value.trim().toLowerCase();
+            const results = document.getElementById('searchResults');
+            
+            if (!firebaseAvailable || !database) {
+                results.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Нет подключения к базе данных</p></div>';
+                return;
+            }
+            
+            if (!query) {
+                results.innerHTML = '<div class="loading">Введите имя для поиска</div>';
+                return;
+            }
+            
+            results.innerHTML = '<div class="loading">Поиск...</div>';
+            
+            try {
+                const snapshot = await database.ref('users').once('value');
+                const users = snapshot.val() || {};
+                const matches = [];
+                
+                for (const [key, user] of Object.entries(users)) {
+                    if (user.username && user.username.toLowerCase().includes(query) && user.username.toLowerCase() !== currentUser.username.toLowerCase()) {
+                        matches.push(user);
+                    }
+                }
+                
+                if (matches.length === 0) {
+                    results.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>Пользователи не найдены</p></div>';
+                    return;
+                }
+                
+                results.innerHTML = matches.map(user => {
+                    const avatarIcon = getAvatarIcon(user.avatar, user.avatarData);
+                    const status = user.status || {};
+                    const isOnline = status.isOnline === true;
+                    const device = status.device || '';
+                    const deviceLabel = device === 'mobile' ? 'Телефон' : device === 'desktop' ? 'ПК' : '';
+                    const statusText = isOnline ? 'Online' + (deviceLabel ? ' · ' + deviceLabel : '') : 'Offline';
+                    const statusColor = isOnline ? '#10b981' : '#94a3b8';
+                    
+                    return '<div class="user-card" onclick="viewUserProfile(\'' + escapeHtml(user.username) + '\')">' +
+                        '<div class="user-card-avatar">' + avatarIcon + '</div>' +
+                        '<div class="user-card-info">' +
+                            '<div class="user-card-name">@' + escapeHtml(user.username) + '</div>' +
+                            '<div class="user-card-status" style="color: ' + statusColor + ';">' + statusText + '</div>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+            } catch (e) {
+                results.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка поиска</p></div>';
+            }
+        }
+
+        async function viewUserProfile(username) {
+            if (!currentUser) return;
+            currentProfileUsername = username;
+            navigateTo('user-profile');
+            
+            const content = document.getElementById('userProfileContent');
+            content.innerHTML = '<div class="loading">Загрузка профиля...</div>';
+            
+            if (!firebaseAvailable || !database) {
+                content.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Нет подключения к базе данных</p></div>';
+                return;
+            }
+            
+            try {
+                const snapshot = await database.ref('users/' + username.toLowerCase()).once('value');
+                const user = snapshot.val();
+                
+                if (!user) {
+                    content.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>Пользователь не найден</p></div>';
+                    return;
+                }
+                
+                const avatarIcon = getAvatarIcon(user.avatar, user.avatarData);
+                const status = user.status || {};
+                const isOnline = status.isOnline === true;
+                const device = status.device || '';
+                const deviceLabel = device === 'mobile' ? 'Телефон' : device === 'desktop' ? 'ПК' : '';
+                const statusText = isOnline ? 'Online' + (deviceLabel ? ' · ' + deviceLabel : '') : 'Offline';
+                const statusColor = isOnline ? '#10b981' : '#94a3b8';
+                
+                let commentsHtml = '';
+                if (firebaseAvailable && database) {
+                    if (userProfileCommentsListener) {
+                        userProfileCommentsListener.off();
+                        userProfileCommentsListener = null;
+                    }
+                    
+                    userProfileCommentsListener = database.ref('profile_comments').orderByChild('profile').equalTo(username);
+                    userProfileCommentsListener.on('value', (snapshot) => {
+                        const allComments = snapshot.val() || {};
+                        const profileComments = [];
+                        
+                        for (const [key, comment] of Object.entries(allComments)) {
+                            if (comment.profile === username) {
+                                profileComments.push({ id: key, ...comment });
+                            }
+                        }
+                        
+                        profileComments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        
+                        if (profileComments.length === 0) {
+                            commentsHtml = '<p style="color: #94a3b8; text-align: center;">Комментариев пока нет. Будьте первым!</p>';
+                        } else {
+                            commentsHtml = profileComments.map(comment => {
+                                const date = new Date(comment.timestamp).toLocaleDateString('ru-RU', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                const commentAvatarIcon = getAvatarIcon(comment.avatar || 'default', comment.avatarData);
+                                return '<div class="list-item">' +
+                                    '<div class="list-item-header">' +
+                                        '<div class="list-item-avatar">' + commentAvatarIcon + '</div>' +
+                                        '<div class="list-item-meta">' +
+                                            '<div class="list-item-author">@' + escapeHtml(comment.author || 'Аноним') + '</div>' +
+                                            '<div class="list-item-date">' + date + '</div>' +
+                                        '</div>' +
+                                    '</div>' +
+                                    '<div class="list-item-text">' + escapeHtml(comment.text || '') + '</div>' +
+                                '</div>';
+                            }).join('');
+                        }
+                        
+                        const commentsContainer = document.getElementById('userProfileComments');
+                        if (commentsContainer) {
+                            commentsContainer.innerHTML = commentsHtml;
+                        }
+                    });
+                }
+                
+                content.innerHTML = '<div class="profile-header-mobile">' +
+                    '<div class="avatar">' + avatarIcon + '</div>' +
+                    '<div class="username">@' + escapeHtml(user.username) + '</div>' +
+                    '<div class="user-status" style="color: ' + statusColor + ';">' + statusText + '</div>' +
+                '</div>' +
+                '<div style="padding: 20px; display: flex; gap: 10px; flex-wrap: wrap;">' +
+                    '<button class="btn-chat" onclick="openChat(\'' + escapeHtml(user.username) + '\')" style="flex: 1; padding: 14px; border-radius: 12px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 1rem; font-weight: 700; cursor: pointer;">' +
+                        '<i class="fas fa-comment"></i> Чат' +
+                    '</button>' +
+                    '<button class="btn-accept" onclick="sendFriendRequest(\'' + escapeHtml(user.username) + '\')" style="flex: 1; padding: 14px; border-radius: 12px; border: none; background: linear-gradient(135deg, #10b981, #059669); color: white; font-size: 1rem; font-weight: 700; cursor: pointer;">' +
+                        '<i class="fas fa-user-plus"></i> Добавить в друзья' +
+                    '</button>' +
+                    '<button class="btn-reject" onclick="blockUser(\'' + escapeHtml(user.username) + '\')" style="flex: 1; padding: 14px; border-radius: 12px; border: none; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; font-size: 1rem; font-weight: 700; cursor: pointer;">' +
+                        '<i class="fas fa-ban"></i> Блок' +
+                    '</button>' +
+                '</div>' +
+                '<div class="comment-form">' +
+                    '<textarea id="userProfileCommentInput" placeholder="Напишите комментарий..."></textarea>' +
+                    '<button onclick="addCommentToProfile(\'' + escapeHtml(user.username) + '\')">Отправить комментарий</button>' +
+                '</div>' +
+                '<div id="userProfileComments" style="margin-top: 20px;">' +
+                    commentsHtml +
+                '</div>';
+            } catch (e) {
+                content.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки профиля</p></div>';
+            }
+        }
+
+        async function addCommentToProfile(profileUsername) {
+            const input = document.getElementById('userProfileCommentInput');
+            const text = input.value.trim();
+            
+            if (!text) {
+                alert('Введите комментарий');
+                return;
+            }
+            
+            if (!firebaseAvailable || !database) {
+                alert('Нет подключения к базе данных');
+                return;
+            }
+            
+            const author = currentUser.username;
+            const userAvatar = currentUser.avatar || 'default';
+            const avatarData = currentUser.avatarData || null;
+            
+            try {
+                await database.ref('profile_comments').push({
+                    author: author,
+                    profile: profileUsername,
+                    text: text,
+                    timestamp: new Date().toISOString(),
+                    isDeveloper: false,
+                    avatar: userAvatar,
+                    avatarData: avatarData
+                });
+                
+                input.value = '';
+                alert('Комментарий добавлен!');
+            } catch (e) {
+                console.error('Ошибка добавления комментария:', e);
+                alert('Ошибка добавления комментария');
+            }
+        }
+
+        function closeUserProfile() {
+            if (userProfileCommentsListener) {
+                userProfileCommentsListener.off();
+                userProfileCommentsListener = null;
+            }
+            currentProfileUsername = null;
+            navigateTo('profile');
+        }
+
+        let friendsListener = null;
+        let requestsListener = null;
+        let blacklistListener = null;
+        let chatListener = null;
+        let currentChatUser = null;
+        let currentFriendsTab = 'friends';
+
+        function showFriends() {
+            if (!currentUser) return;
+            navigateTo('friends');
+            showFriendsTab('friends');
+        }
+
+        function showFriendsTab(tab) {
+            currentFriendsTab = tab;
+            document.querySelectorAll('#friendsTabs button').forEach(btn => {
+                btn.style.background = 'transparent';
+                btn.style.color = '#94a3b8';
+            });
+            const activeTab = document.getElementById('tab-' + tab);
+            if (activeTab) {
+                activeTab.style.background = 'rgba(99,102,241,0.2)';
+                activeTab.style.color = 'white';
+            }
+            
+            if (tab === 'friends') loadFriends();
+            else if (tab === 'requests') loadFriendRequests();
+            else if (tab === 'blacklist') loadBlacklist();
+        }
+
+        async function loadFriends() {
+            const list = document.getElementById('friendsList');
+            list.innerHTML = '<div class="loading">Загрузка...</div>';
+            
+            if (!firebaseAvailable || !database) {
+                list.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Нет подключения к базе данных</p></div>';
+                return;
+            }
+            
+            if (friendsListener) {
+                friendsListener.off();
+                friendsListener = null;
+            }
+            
+            try {
+                friendsListener = database.ref('friends/' + currentUser.username.toLowerCase());
+                friendsListener.on('value', (snapshot) => {
+                    const friends = snapshot.val() || {};
+                    const friendUsernames = Object.keys(friends).filter(f => friends[f] === 'accepted');
+                    
+                    if (friendUsernames.length === 0) {
+                        list.innerHTML = '<div class="empty-state"><i class="fas fa-user-friends"></i><p>У вас пока нет друзей</p></div>';
+                        return;
+                    }
+                    
+                    list.innerHTML = friendUsernames.map(username => {
+                        const avatarIcon = getAvatarIcon('default', null);
+                        return '<div class="user-card" onclick="openChat(\'' + escapeHtml(username) + '\')">' +
+                            '<div class="user-card-avatar">' + avatarIcon + '</div>' +
+                            '<div class="user-card-info">' +
+                                '<div class="user-card-name">@' + escapeHtml(username) + '</div>' +
+                                '<div class="user-card-status" style="color: #10b981;">Online</div>' +
+                            '</div>' +
+                            '<button class="btn-chat" onclick="event.stopPropagation(); openChat(\'' + escapeHtml(username) + '\')">Чат</button>' +
+                        '</div>';
+                    }).join('');
+                });
+            } catch (e) {
+                list.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки друзей</p></div>';
+            }
+        }
+
+        async function loadFriendRequests() {
+            const list = document.getElementById('friendsList');
+            list.innerHTML = '<div class="loading">Загрузка...</div>';
+            
+            if (!firebaseAvailable || !database) {
+                list.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Нет подключения к базе данных</p></div>';
+                return;
+            }
+            
+            if (requestsListener) {
+                requestsListener.off();
+                requestsListener = null;
+            }
+            
+            try {
+                requestsListener = database.ref('friend_requests/' + currentUser.username.toLowerCase());
+                requestsListener.on('value', (snapshot) => {
+                    const requests = snapshot.val() || {};
+                    const requestKeys = Object.keys(requests);
+                    
+                    if (requestKeys.length === 0) {
+                        list.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Нет новых заявок</p></div>';
+                        return;
+                    }
+                    
+                    list.innerHTML = requestKeys.map(fromUser => {
+                        return '<div class="friend-request-card">' +
+                            '<div class="user-card-avatar" style="width: 48px; height: 48px; font-size: 20px;">' + getAvatarIcon('default', null) + '</div>' +
+                            '<div class="user-card-info">' +
+                                '<div class="user-card-name">@' + escapeHtml(fromUser) + '</div>' +
+                                '<div class="user-card-status">Хочет добавить вас в друзья</div>' +
+                            '</div>' +
+                            '<div class="friend-request-actions">' +
+                                '<button class="btn-accept" onclick="acceptFriendRequest(\'' + escapeHtml(fromUser) + '\')">Принять</button>' +
+                                '<button class="btn-reject" onclick="rejectFriendRequest(\'' + escapeHtml(fromUser) + '\')">Отклонить</button>' +
+                            '</div>' +
+                        '</div>';
+                    }).join('');
+                });
+            } catch (e) {
+                list.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки заявок</p></div>';
+            }
+        }
+
+        async function loadBlacklist() {
+            const list = document.getElementById('friendsList');
+            list.innerHTML = '<div class="loading">Загрузка...</div>';
+            
+            if (!firebaseAvailable || !database) {
+                list.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Нет подключения к базе данных</p></div>';
+                return;
+            }
+            
+            if (blacklistListener) {
+                blacklistListener.off();
+                blacklistListener = null;
+            }
+            
+            try {
+                blacklistListener = database.ref('blacklists/' + currentUser.username.toLowerCase());
+                blacklistListener.on('value', (snapshot) => {
+                    const blocked = snapshot.val() || {};
+                    const blockedUsers = Object.keys(blocked);
+                    
+                    if (blockedUsers.length === 0) {
+                        list.innerHTML = '<div class="empty-state"><i class="fas fa-shield-alt"></i><p>Черный список пуст</p></div>';
+                        return;
+                    }
+                    
+                    list.innerHTML = blockedUsers.map(username => {
+                        return '<div class="user-card">' +
+                            '<div class="user-card-avatar">' + getAvatarIcon('default', null) + '</div>' +
+                            '<div class="user-card-info">' +
+                                '<div class="user-card-name">@' + escapeHtml(username) + '</div>' +
+                                '<div class="user-card-status" style="color: #ef4444;">Заблокирован</div>' +
+                            '</div>' +
+                            '<button class="btn-block" onclick="removeFromBlacklist(\'' + escapeHtml(username) + '\')">Разблокировать</button>' +
+                        '</div>';
+                    }).join('');
+                });
+            } catch (e) {
+                list.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки черного списка</p></div>';
+            }
+        }
+
+        async function sendFriendRequest(toUsername) {
+            if (!currentUser || !firebaseAvailable || !database) return;
+            
+            try {
+                await database.ref('friend_requests/' + toUsername.toLowerCase() + '/' + currentUser.username.toLowerCase()).set({
+                    from: currentUser.username,
+                    timestamp: new Date().toISOString(),
+                    status: 'pending'
+                });
+                alert('Заявка отправлена!');
+            } catch (e) {
+                console.error('Ошибка отправки заявки:', e);
+                alert('Ошибка отправки заявки');
+            }
+        }
+
+        async function acceptFriendRequest(fromUser) {
+            if (!currentUser || !firebaseAvailable || !database) return;
+            
+            try {
+                const lowerFrom = fromUser.toLowerCase();
+                const lowerMe = currentUser.username.toLowerCase();
+                
+                await database.ref('friends/' + lowerMe + '/' + lowerFrom).set('accepted');
+                await database.ref('friends/' + lowerFrom + '/' + lowerMe).set('accepted');
+                await database.ref('friend_requests/' + lowerMe + '/' + lowerFrom).remove();
+                
+                alert('Заявка принята!');
+            } catch (e) {
+                console.error('Ошибка принятия заявки:', e);
+                alert('Ошибка принятия заявки');
+            }
+        }
+
+        async function rejectFriendRequest(fromUser) {
+            if (!currentUser || !firebaseAvailable || !database) return;
+            
+            try {
+                const lowerFrom = fromUser.toLowerCase();
+                const lowerMe = currentUser.username.toLowerCase();
+                
+                await database.ref('friend_requests/' + lowerMe + '/' + lowerFrom).remove();
+                await database.ref('blacklists/' + lowerMe + '/' + lowerFrom).set(true);
+                
+                alert('Заявка отклонена, пользователь добавлен в ЧС');
+            } catch (e) {
+                console.error('Ошибка отклонения заявки:', e);
+                alert('Ошибка отклонения заявки');
+            }
+        }
+
+        function getChatId(user1, user2) {
+            const sorted = [user1.toLowerCase(), user2.toLowerCase()].sort();
+            return sorted[0] + '_' + sorted[1];
+        }
+
+        async function openChat(withUsername) {
+            if (!currentUser) return;
+            currentChatUser = withUsername;
+            navigateTo('chat');
+            
+            document.getElementById('chatTitle').textContent = '@' + withUsername;
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML = '<div class="loading">Загрузка сообщений...</div>';
+            
+            if (!firebaseAvailable || !database) {
+                messagesContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Нет подключения к базе данных</p></div>';
+                return;
+            }
+            
+            if (chatListener) {
+                chatListener.off();
+                chatListener = null;
+            }
+            
+            const chatId = getChatId(currentUser.username, withUsername);
+            
+            try {
+                chatListener = database.ref('chats/' + chatId + '/messages');
+                chatListener.on('value', (snapshot) => {
+                    const messages = snapshot.val() || {};
+                    const sortedMessages = Object.entries(messages).sort((a, b) => {
+                        const timeA = new Date(a[1].timestamp || 0);
+                        const timeB = new Date(b[1].timestamp || 0);
+                        return timeA - timeB;
+                    });
+                    
+                    if (sortedMessages.length === 0) {
+                        messagesContainer.innerHTML = '<div class="empty-state"><i class="fas fa-comments"></i><p>Нет сообщений. Начните общение!</p></div>';
+                        return;
+                    }
+                    
+                    messagesContainer.innerHTML = sortedMessages.map(([key, msg]) => {
+                        const isMe = msg.author === currentUser.username;
+                        const time = new Date(msg.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                        let content = '';
+                        
+                        if (msg.type === 'image' && msg.imageData) {
+                            content = '<img src="' + msg.imageData + '" style="max-width: 200px; border-radius: 8px;" onclick="this.requestFullscreen()">';
+                        } else {
+                            content = escapeHtml(msg.text || '');
+                        }
+                        
+                        return '<div class="chat-message ' + (isMe ? 'sent' : 'received') + '">' +
+                            content +
+                            '<div class="chat-message-time">' + time + '</div>' +
+                        '</div>';
+                    }).join('');
+                    
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                });
+            } catch (e) {
+                messagesContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки сообщений</p></div>';
+            }
+        }
+
+        function closeChat() {
+            if (chatListener) {
+                chatListener.off();
+                chatListener = null;
+            }
+            currentChatUser = null;
+            navigateTo('profile');
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            
+            if (!text || !currentChatUser || !firebaseAvailable || !database) return;
+            
+            const chatId = getChatId(currentUser.username, currentChatUser);
+            
+            try {
+                await database.ref('chats/' + chatId + '/messages').push({
+                    author: currentUser.username,
+                    text: text,
+                    type: 'text',
+                    timestamp: new Date().toISOString()
+                });
+                input.value = '';
+            } catch (e) {
+                console.error('Ошибка отправки сообщения:', e);
+                alert('Ошибка отправки сообщения');
+            }
+        }
+
+        async function sendChatImage(event) {
+            const file = event.target.files[0];
+            if (!file || !currentChatUser || !firebaseAvailable || !database) return;
+            
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Файл слишком большой! Максимальный размер 2MB');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const chatId = getChatId(currentUser.username, currentChatUser);
+                
+                try {
+                    await database.ref('chats/' + chatId + '/messages').push({
+                        author: currentUser.username,
+                        imageData: e.target.result,
+                        type: 'image',
+                        timestamp: new Date().toISOString()
+                    });
+                } catch (err) {
+                    console.error('Ошибка отправки изображения:', err);
+                    alert('Ошибка отправки изображения');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function removeFromBlacklist(username) {
+            if (!currentUser || !firebaseAvailable || !database) return;
+            
+            try {
+                await database.ref('blacklists/' + currentUser.username.toLowerCase() + '/' + username.toLowerCase()).remove();
+                alert('Пользователь разблокирован');
+                loadBlacklist();
+            } catch (e) {
+                console.error('Ошибка разблокировки:', e);
+                alert('Ошибка разблокировки');
+            }
+        }
+
+        async function blockUser(username) {
+            if (!currentUser || !firebaseAvailable || !database) return;
+            
+            try {
+                const lowerUsername = username.toLowerCase();
+                const lowerMe = currentUser.username.toLowerCase();
+                
+                await database.ref('blacklists/' + lowerMe + '/' + lowerUsername).set(true);
+                await database.ref('friends/' + lowerMe + '/' + lowerUsername).remove();
+                await database.ref('friends/' + lowerUsername + '/' + lowerMe).remove();
+                await database.ref('friend_requests/' + lowerMe + '/' + lowerUsername).remove();
+                await database.ref('friend_requests/' + lowerUsername + '/' + lowerMe).remove();
+                
+                alert('Пользователь заблокирован');
+                closeUserProfile();
+            } catch (e) {
+                console.error('Ошибка блокировки:', e);
+                alert('Ошибка блокировки');
+            }
+        }
+
+        async function updateFriendsUI() {
+            // Обновляет UI в профилях пользователей (кнопки добавить в друзья/чат/блокировать)
+            // Эта функция будет вызываться после загрузки профиля пользователя
+        }
+
         function setupMobilePresence(username) {
             if (!username || !firebaseAvailable || !database) return;
             const sanitizedUsername = sanitizeFirebasePath(username.toLowerCase());
@@ -1514,6 +2502,10 @@
             if (commentsCountListener) {
                 commentsCountListener.off();
                 commentsCountListener = null;
+            }
+            if (userProfileCommentsListener) {
+                userProfileCommentsListener.off();
+                userProfileCommentsListener = null;
             }
             
             localStorage.removeItem('mobile_username');
