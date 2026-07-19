@@ -2528,8 +2528,17 @@
 
         // Init
         function init() {
-            initFirebase();
-            loadGamesData();
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+            }
+            
+            try {
+                initFirebase();
+                loadGamesData();
+            } catch (e) {
+                console.error('Init error:', e);
+            }
             
             const savedUsername = localStorage.getItem('mobile_username');
             const savedPassword = localStorage.getItem('mobile_password');
@@ -2550,16 +2559,11 @@
                 }
             }
             
-            const loadingScreen = document.getElementById('loadingScreen');
-            if (loadingScreen) {
-                loadingScreen.style.display = 'none';
-            }
-            
             if (!firebaseAvailable || !database) {
                 const hasFirebase = waitForFirebase(15000);
                 hasFirebase.then(ok => {
                     if (!ok) {
-                        showFirebaseError('Не удалось подключиться к базе данных.<br>Проверьте интернет или отключите блокировщик рекламы.<br><button type="button" onclick="loadFirebaseDynamically();" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(99,102,241,0.2);color:#6366f1;font-size:0.85rem;cursor:pointer;">Попробовать снова</button>');
+                        showFirebaseError('Не удалось подключиться к базе данных.<br>Проверьте интернет или отключите блокировщик рекламы.<br><button type="button" onclick="loadFirebaseDynamically().then(() => location.reload());" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(99,102,241,0.2);color:#6366f1;font-size:0.85rem;cursor:pointer;">Попробовать снова</button>');
                     }
                 });
             }
@@ -2626,6 +2630,13 @@
                 });
             });
         }
+        
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen && loadingScreen.style.display !== 'none') {
+                loadingScreen.style.display = 'none';
+            }
+        }, 20000);
     </script>
 </body>
 </html>
