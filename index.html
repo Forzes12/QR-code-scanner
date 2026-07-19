@@ -804,6 +804,9 @@
         let qrScanner = null;
         let firebaseInitAttempts = 0;
         const MAX_FIREBASE_ATTEMPTS = 3;
+        let commentsListener = null;
+        let commentsCountListener = null;
+        let currentScreen = 'auth';
 
         function initFirebase() {
             if (firebaseAvailable && database) {
@@ -934,9 +937,17 @@
             if (screen === 'profile' && currentUser) {
                 loadProfile();
             }
+            
+            currentScreen = screen;
         }
         
         function navigateTo(screen) {
+            if (currentScreen === 'comments' && screen !== 'comments') {
+                if (commentsListener) {
+                    commentsListener.off();
+                    commentsListener = null;
+                }
+            }
             showScreen(screen);
             window.location.hash = '#/' + screen;
         }
@@ -950,6 +961,13 @@
                 screen = 'auth';
             } else if (currentUser && screen === 'auth') {
                 screen = 'profile';
+            }
+            
+            if (currentScreen === 'comments' && screen !== 'comments') {
+                if (commentsListener) {
+                    commentsListener.off();
+                    commentsListener = null;
+                }
             }
             
             showScreen(screen);
@@ -1050,7 +1068,7 @@
             const userStatus = document.getElementById('mobileUserStatus');
             
             if (usernameDisplay) usernameDisplay.textContent = '@' + currentUser.username;
-            if (avatarEl) avatarEl.innerHTML = getAvatarIcon(currentUser.avatar);
+            if (avatarEl) avatarEl.innerHTML = getAvatarIcon(currentUser.avatar, currentUser.avatarData);
             if (downloadsEl) downloadsEl.textContent = currentUser.downloadsCount || 0;
             if (likesEl) likesEl.textContent = currentUser.likesCount || 0;
             
@@ -1060,17 +1078,23 @@
             if (userStatus) userStatus.innerHTML = '<i class="fas fa-circle"></i> Онлайн';
             
             if (firebaseAvailable && database) {
-                try {
-                    const commentsSnapshot = await database.ref('profile_comments').orderByChild('profile').equalTo(currentUser.username).once('value');
-                    const commentsCount = commentsSnapshot.exists() ? Object.keys(commentsSnapshot.val()).length : 0;
-                    if (commentsEl) commentsEl.textContent = commentsCount;
-                } catch (e) {
-                    if (commentsEl) commentsEl.textContent = '0';
+                if (commentsCountListener) {
+                    commentsCountListener.off();
+                    commentsCountListener = null;
                 }
+                
+                commentsCountListener = database.ref('profile_comments').orderByChild('profile').equalTo(currentUser.username);
+                commentsCountListener.on('value', (snapshot) => {
+                    const commentsCount = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
+                    if (commentsEl) commentsEl.textContent = commentsCount;
+                });
             }
         }
 
-        function getAvatarIcon(avatar) {
+        function getAvatarIcon(avatar, avatarData) {
+            if (avatar === 'custom' && avatarData) {
+                return '<img src="' + avatarData + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">';
+            }
             const icons = {
                 'default': 'fa-user',
                 'ninja': 'fa-user-ninja',
@@ -1124,43 +1148,52 @@
                 return;
             }
             
+            if (commentsListener) {
+                commentsListener.off();
+                commentsListener = null;
+            }
+            
             try {
-                const snapshot = await database.ref('profile_comments').once('value');
-                const allComments = snapshot.val() || {};
-                const userComments = [];
+                commentsListener = database.ref('profile_comments').orderByChild('profile').equalTo(currentUser.username);
                 
-                for (const [key, comment] of Object.entries(allComments)) {
-                    if (comment.profile === currentUser.username) {
-                        userComments.push({ id: key, ...comment });
+                commentsListener.on('value', (snapshot) => {
+                    const allComments = snapshot.val() || {};
+                    const userComments = [];
+                    
+                    for (const [key, comment] of Object.entries(allComments)) {
+                        if (comment.profile === currentUser.username) {
+                            userComments.push({ id: key, ...comment });
+                        }
                     }
-                }
-                
-                userComments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                
-                if (userComments.length === 0) {
-                    list.innerHTML = '<div class="empty-state"><i class="fas fa-comment-slash"></i><p>У вас пока нет комментариев</p></div>';
-                    return;
-                }
-                
-                list.innerHTML = userComments.map(comment => {
-                    const date = new Date(comment.timestamp).toLocaleDateString('ru-RU', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    return '<div class="list-item">' +
-                        '<div class="list-item-header">' +
-                            '<div class="list-item-avatar"><i class="fas fa-user"></i></div>' +
-                            '<div class="list-item-meta">' +
-                                '<div class="list-item-author">@' + escapeHtml(comment.author || 'Аноним') + '</div>' +
-                                '<div class="list-item-date">' + date + '</div>' +
+                    
+                    userComments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    
+                    if (userComments.length === 0) {
+                        list.innerHTML = '<div class="empty-state"><i class="fas fa-comment-slash"></i><p>У вас пока нет комментариев</p></div>';
+                        return;
+                    }
+                    
+                    list.innerHTML = userComments.map(comment => {
+                        const date = new Date(comment.timestamp).toLocaleDateString('ru-RU', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        const avatarIcon = getAvatarIcon(comment.avatar || 'default', comment.avatarData);
+                        return '<div class="list-item">' +
+                            '<div class="list-item-header">' +
+                                '<div class="list-item-avatar">' + avatarIcon + '</div>' +
+                                '<div class="list-item-meta">' +
+                                    '<div class="list-item-author">@' + escapeHtml(comment.author || 'Аноним') + '</div>' +
+                                    '<div class="list-item-date">' + date + '</div>' +
+                                '</div>' +
                             '</div>' +
-                        '</div>' +
-                        '<div class="list-item-text">' + escapeHtml(comment.text || '') + '</div>' +
-                    '</div>';
-                }).join('');
+                            '<div class="list-item-text">' + escapeHtml(comment.text || '') + '</div>' +
+                        '</div>';
+                    }).join('');
+                });
             } catch (e) {
                 list.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки комментариев</p></div>';
             }
@@ -1385,6 +1418,16 @@
             if (currentUser) {
                 setMobileOffline(currentUser.username);
             }
+            
+            if (commentsListener) {
+                commentsListener.off();
+                commentsListener = null;
+            }
+            if (commentsCountListener) {
+                commentsCountListener.off();
+                commentsCountListener = null;
+            }
+            
             localStorage.removeItem('mobile_username');
             localStorage.removeItem('mobile_password');
             sessionStorage.removeItem('mobile_currentUser');
