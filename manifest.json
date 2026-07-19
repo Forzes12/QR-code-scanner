@@ -1,0 +1,22 @@
+{
+  "name": "Forzes HUB Mobile",
+  "short_name": "Forzes HUB",
+  "start_url": "mobile.html",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
