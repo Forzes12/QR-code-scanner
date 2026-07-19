@@ -7,16 +7,16 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Forzes HUB">
-    <link rel="icon" type="image/png" sizes="192x192" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=1">
-    <link rel="icon" type="image/png" sizes="512x512" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=1">
-    <link rel="apple-touch-icon" sizes="192x192" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=1">
-    <link rel="apple-touch-icon" sizes="512x512" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=1">
-    <link rel="manifest" href="manifest.json?v=1">
+    <link rel="icon" type="image/png" sizes="192x192" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=3">
+    <link rel="icon" type="image/png" sizes="512x512" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=3">
+    <link rel="apple-touch-icon" sizes="192x192" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=3">
+    <link rel="apple-touch-icon" sizes="512x512" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=3">
+    <link rel="manifest" href="manifest.json?v=3">
     <title>Forzes HUB Mobile</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" crossorigin="anonymous" onerror="window._firebaseLoadError='app'"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js" crossorigin="anonymous" onerror="window._firebaseLoadError='database'"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" onerror="window._firebaseLoadError='app'"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js" onerror="window._firebaseLoadError='database'"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" onerror="console.warn('QR scanner library failed to load')"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -28,6 +28,7 @@
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .screen { display: none; min-height: 100vh; padding: 12px; padding-bottom: 80px; }
         .screen.active { display: flex; flex-direction: column; }
         
@@ -599,8 +600,13 @@
     </style>
 </head>
 <body>
+    <div id="loadingScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; gap: 20px;">
+        <div style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #6366f1; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <p style="color: #94a3b8; font-size: 1rem;">Загрузка приложения...</p>
+    </div>
+    
     <!-- Auth Screen -->
-    <div id="authScreen" class="screen auth-screen active">
+    <div id="authScreen" class="screen auth-screen">
         <div class="auth-card">
             <h1><i class="fas fa-gamepad"></i> Forzes HUB</h1>
             <p class="subtitle">Вход в мобильное приложение</p>
@@ -860,6 +866,41 @@
             }
         }
 
+        function loadFirebaseDynamically() {
+            if (firebaseAvailable && database) {
+                return Promise.resolve(true);
+            }
+            
+            return new Promise((resolve) => {
+                if (typeof firebase !== 'undefined' && firebase.database) {
+                    initFirebase();
+                    resolve(firebaseAvailable);
+                    return;
+                }
+                
+                const script1 = document.createElement('script');
+                script1.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
+                script1.onload = () => {
+                    const script2 = document.createElement('script');
+                    script2.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js';
+                    script2.onload = () => {
+                        initFirebase();
+                        resolve(firebaseAvailable);
+                    };
+                    script2.onerror = () => {
+                        console.error('Failed to load firebase-database-compat dynamically');
+                        resolve(false);
+                    };
+                    document.head.appendChild(script2);
+                };
+                script1.onerror = () => {
+                    console.error('Failed to load firebase-app-compat dynamically');
+                    resolve(false);
+                };
+                document.head.appendChild(script1);
+            });
+        }
+
         function checkFirebaseScripts() {
             if (window._firebaseLoadError === 'app') {
                 showFirebaseError('Firebase SDK не загружен. Возможно, блокировщик рекламы или браузер блокирует скрипты. Попробуйте отключить блокировщик.');
@@ -946,7 +987,7 @@
             if (!firebaseAvailable || !database) {
                 const hasFirebase = await waitForFirebase(5000);
                 if (!hasFirebase) {
-                    errorDiv.innerHTML = 'База данных не подключена.<br><button type="button" onclick="initFirebase(); location.reload();" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(99,102,241,0.2);color:#6366f1;font-size:0.85rem;cursor:pointer;">Попробовать снова</button>';
+                    errorDiv.innerHTML = 'База данных не подключена.<br><button type="button" onclick="loadFirebaseDynamically().then(() => location.reload());" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(99,102,241,0.2);color:#6366f1;font-size:0.85rem;cursor:pointer;">Попробовать снова</button>';
                     errorDiv.style.display = 'block';
                     return;
                 }
@@ -1049,7 +1090,7 @@
         async function loadGamesData() {
             if (Object.keys(gamesData).length > 0) return;
             try {
-                const response = await fetch('assets/data/games.json');
+                const response = await fetch('assets/data/games.json?v=3');
                 if (response.ok) {
                     gamesData = await response.json();
                 }
@@ -1175,14 +1216,17 @@
             const userStatusDatabaseRef = database.ref('/status/' + sanitizedUsername);
             const isOnlineRef = userStatusDatabaseRef.child('isOnline');
             const lastSeenRef = userStatusDatabaseRef.child('lastSeen');
+            const deviceRef = userStatusDatabaseRef.child('device');
             
             const connectedRef = database.ref('.info/connected');
             connectedRef.on('value', (snap) => {
                 if (snap.val() === true) {
                     isOnlineRef.set(true);
                     lastSeenRef.set(firebase.database.ServerValue.TIMESTAMP);
+                    deviceRef.set('mobile');
                     isOnlineRef.onDisconnect().set(false);
                     lastSeenRef.onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
+                    deviceRef.onDisconnect().set(null);
                 }
             });
         }
@@ -1192,7 +1236,8 @@
             const sanitizedUsername = sanitizeFirebasePath(username.toLowerCase());
             database.ref('/status/' + sanitizedUsername).update({
                 isOnline: false,
-                lastSeen: firebase.database.ServerValue.TIMESTAMP
+                lastSeen: firebase.database.ServerValue.TIMESTAMP,
+                device: null
             });
         }
 
@@ -1382,6 +1427,20 @@
                 }
             }
             
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+            }
+            
+            if (!firebaseAvailable || !database) {
+                const hasFirebase = waitForFirebase(15000);
+                hasFirebase.then(ok => {
+                    if (!ok) {
+                        showFirebaseError('Не удалось подключиться к базе данных.<br>Проверьте интернет или отключите блокировщик рекламы.<br><button type="button" onclick="loadFirebaseDynamically();" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(99,102,241,0.2);color:#6366f1;font-size:0.85rem;cursor:pointer;">Попробовать снова</button>');
+                    }
+                });
+            }
+            
             handleRoute();
             
             const scannerScreen = document.getElementById('scannerScreen');
@@ -1406,6 +1465,44 @@
         }
 
         document.addEventListener('DOMContentLoaded', init);
+        
+        if ('serviceWorker' in navigator) {
+            const swReg = navigator.serviceWorker.register('/service-worker.js?v=3').catch(() => {});
+            
+            let reloadTimeout;
+            const scheduleReload = () => {
+                clearTimeout(reloadTimeout);
+                reloadTimeout = setTimeout(() => location.reload(), 30000);
+            };
+            
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                scheduleReload();
+            });
+            
+            navigator.serviceWorker.ready.then((registration) => {
+                if (registration.waiting) {
+                    scheduleReload();
+                }
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                scheduleReload();
+                            }
+                        });
+                    }
+                });
+            });
+            
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.getRegistration().then((reg) => {
+                    if (reg && reg.waiting) {
+                        scheduleReload();
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>
