@@ -651,27 +651,24 @@
             height: 24px;
             border-radius: 50%;
             border: none;
-            background: rgba(239, 68, 68, 0.7);
+            background: rgba(239, 68, 68, 0.9);
             color: white;
             cursor: pointer;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             font-size: 10px;
             z-index: 5;
             padding: 0;
-            opacity: 0.7;
-            transition: opacity 0.2s;
         }
-        .chat-message-wrapper:hover .msg-delete-btn,
-        .chat-message-wrapper:active .msg-delete-btn {
-            opacity: 1;
+        .chat-message-wrapper.show-delete .msg-delete-btn {
+            display: flex;
         }
         .chat-message-wrapper.sent .msg-delete-btn {
-            background: rgba(239, 68, 68, 0.8);
+            background: rgba(239, 68, 68, 0.9);
         }
         .chat-message-wrapper.received .msg-delete-btn {
-            background: rgba(239, 68, 68, 0.8);
+            background: rgba(239, 68, 68, 0.9);
         }
         .chat-messages.theme-image {
             background-size: cover;
@@ -1213,11 +1210,11 @@
                 <span>Назад</span>
             </button>
             <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-                <div id="chatUserAvatar" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; overflow: hidden;">
+                <div id="chatUserAvatar" onclick="if(currentChatUser) viewUserProfile(currentChatUser)" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; overflow: hidden; cursor: pointer;" title="Открыть профиль">
                 </div>
                 <div style="min-width: 0; flex: 1;">
-                    <div id="chatUserName" style="color: white; font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Чат</div>
-                    <div id="chatUserStatus" style="font-size: 0.7rem; color: #94a3b8;">Offline</div>
+                    <div id="chatUserName" onclick="if(currentChatUser) viewUserProfile(currentChatUser)" style="color: white; font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="Открыть профиль">Чат</div>
+                    <div id="chatUserStatus" style="font-size: 0.75rem; color: #94a3b8;">Offline</div>
                 </div>
             </div>
             <button onclick="openChatThemePicker()" style="padding: 6px 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; flex-shrink: 0; font-size: 0.9rem;">
@@ -1355,6 +1352,9 @@
         let isRecording = false;
         let currentChatUser = null;
         let currentFriendsTab = 'friends';
+        let lastSeenMessageTime = {};
+        let notificationPermission = 'default';
+        let isViewingChat = null;
 
         function initFirebase() {
             if (firebaseAvailable && database) {
@@ -1639,7 +1639,15 @@
                 });
                 
                 setupMobilePresence(username);
-                navigateTo('profile');
+                requestNotificationPermission();
+                
+                const pendingChat = sessionStorage.getItem('pendingNotificationChat');
+                if (pendingChat) {
+                    sessionStorage.removeItem('pendingNotificationChat');
+                    setTimeout(() => openChat(pendingChat), 500);
+                } else {
+                    navigateTo('profile');
+                }
             } catch (err) {
                 console.error('Mobile auth error:', err);
                 errorDiv.textContent = 'Ошибка соединения. Проверьте интернет и попробуйте снова.';
@@ -1754,7 +1762,15 @@
                 sessionStorage.setItem('mobile_currentUser', JSON.stringify(newUser));
                 
                 setupMobilePresence(username);
-                navigateTo('profile');
+                requestNotificationPermission();
+                
+                const pendingChat = sessionStorage.getItem('pendingNotificationChat');
+                if (pendingChat) {
+                    sessionStorage.removeItem('pendingNotificationChat');
+                    setTimeout(() => openChat(pendingChat), 500);
+                } else {
+                    navigateTo('profile');
+                }
             } catch (err) {
                 console.error('Mobile register error:', err);
                 errorDiv.textContent = 'Ошибка создания аккаунта. Проверьте интернет и попробуйте снова.';
@@ -2534,6 +2550,8 @@
             currentChatUser = withUsername;
             
             const chatId = getChatId(currentUser.username, withUsername);
+            isViewingChat = chatId;
+            requestNotificationPermission();
             navigateTo('chat');
             
             const chatUserName = document.getElementById('chatUserName');
@@ -2583,7 +2601,7 @@
                     }
                 }
                 
-                chatStatusListener = database.ref('users/' + withUsername.toLowerCase() + '/status');
+                chatStatusListener = database.ref('status/' + withUsername.toLowerCase());
                 chatStatusListener.on('value', (snapshot) => {
                     const status = snapshot.val() || {};
                     const isOnline = status.isOnline === true;
@@ -2665,6 +2683,58 @@
                     
                     messagesContainer.innerHTML = renderedMessages.join('');
                     
+                    const wrappers = messagesContainer.querySelectorAll('.chat-message-wrapper');
+                    wrappers.forEach(wrapper => {
+                        wrapper.addEventListener('touchstart', function(e) {
+                            if (e.target.closest('.voice-play-btn')) return;
+                            longPressTimer = setTimeout(() => {
+                                showMessageDeleteButton(wrapper);
+                            }, LONG_PRESS_DURATION);
+                        }, { passive: true });
+                        
+                        wrapper.addEventListener('touchend', function() {
+                            if (longPressTimer) {
+                                clearTimeout(longPressTimer);
+                                longPressTimer = null;
+                            }
+                            setTimeout(() => {
+                                hideMessageDeleteButton(wrapper);
+                            }, 2000);
+                        });
+                        
+                        wrapper.addEventListener('touchmove', function() {
+                            if (longPressTimer) {
+                                clearTimeout(longPressTimer);
+                                longPressTimer = null;
+                            }
+                        });
+                        
+                        wrapper.addEventListener('mousedown', function(e) {
+                            if (e.target.closest('.voice-play-btn') || e.target.closest('.msg-delete-btn')) return;
+                            longPressTimer = setTimeout(() => {
+                                showMessageDeleteButton(wrapper);
+                            }, LONG_PRESS_DURATION);
+                        });
+                        
+                        wrapper.addEventListener('mouseup', function() {
+                            if (longPressTimer) {
+                                clearTimeout(longPressTimer);
+                                longPressTimer = null;
+                            }
+                            setTimeout(() => {
+                                hideMessageDeleteButton(wrapper);
+                            }, 2000);
+                        });
+                        
+                        wrapper.addEventListener('mouseleave', function() {
+                            if (longPressTimer) {
+                                clearTimeout(longPressTimer);
+                                longPressTimer = null;
+                            }
+                            hideMessageDeleteButton(wrapper);
+                        });
+                    });
+                    
                     if (unreadFromOther) {
                         const updates = {};
                         sortedMessages.forEach(([key, msg]) => {
@@ -2691,6 +2761,26 @@
                             }
                         }
                     }, 150);
+                    
+                    if (isViewingChat !== chatId) {
+                        const otherUserMessages = sortedMessages.filter(([key, msg]) => {
+                            return msg.author !== currentUser.username;
+                        });
+                        
+                        if (otherUserMessages.length > 0 && notificationPermission === 'granted') {
+                            const lastOtherMessage = otherUserMessages[otherUserMessages.length - 1][1];
+                            const lastSeen = lastSeenMessageTime[chatId];
+                            
+                            if (!lastSeen || new Date(lastOtherMessage.timestamp).getTime() > new Date(lastSeen).getTime()) {
+                                const msgText = lastOtherMessage.type === 'text' ? lastOtherMessage.text : 
+                                               lastOtherMessage.type === 'image' ? '📷 Фото' :
+                                               lastOtherMessage.type === 'voice' ? '🎤 Голосовое' : 'Сообщение';
+                                showChatNotification(withUsername, msgText, chatId);
+                            }
+                        }
+                    }
+                    
+                    lastSeenMessageTime[chatId] = new Date().toISOString();
                 });
             } catch (e) {
                 messagesContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки сообщений</p></div>';
@@ -2717,6 +2807,11 @@
                 delete voiceMessageMap[key];
             }
             voiceMessageId = 0;
+            if (currentChatUser) {
+                const chatId = getChatId(currentUser.username, currentChatUser);
+                lastSeenMessageTime[chatId] = new Date().toISOString();
+            }
+            isViewingChat = null;
             currentChatUser = null;
             navigateTo('profile');
         }
@@ -2983,6 +3078,8 @@
         let voiceMessageId = 0;
         const voiceMessageMap = {};
         let voiceClickHandler = null;
+        let longPressTimer = null;
+        const LONG_PRESS_DURATION = 500;
 
         function playVoiceMessage(messageId, buttonElement) {
             const audioData = voiceMessageMap[messageId];
@@ -3026,6 +3123,18 @@
             }
         }
 
+        function showMessageDeleteButton(wrapper) {
+            if (wrapper && wrapper.classList) {
+                wrapper.classList.add('show-delete');
+            }
+        }
+
+        function hideMessageDeleteButton(wrapper) {
+            if (wrapper && wrapper.classList) {
+                wrapper.classList.remove('show-delete');
+            }
+        }
+
         function handleChatContainerClick(e) {
             const deleteBtn = e.target.closest('.msg-delete-btn');
             if (deleteBtn) {
@@ -3043,6 +3152,53 @@
                 if (voiceId && voiceMessageMap[voiceId]) {
                     playVoiceMessage(voiceId, btn);
                 }
+            }
+        }
+
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                return false;
+            }
+            notificationPermission = Notification.permission;
+            if (notificationPermission === 'default') {
+                return Notification.requestPermission().then(permission => {
+                    notificationPermission = permission;
+                    return permission === 'granted';
+                });
+            }
+            return Promise.resolve(notificationPermission === 'granted');
+        }
+
+        function showChatNotification(fromUser, messageText, chatId) {
+            if (!currentUser || fromUser === currentUser.username) return;
+            if (notificationPermission !== 'granted') return;
+            if (isViewingChat === chatId) return;
+            
+            try {
+                const notification = new Notification('Новое сообщение от @' + fromUser, {
+                    body: messageText || 'Новое сообщение',
+                    icon: 'game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png',
+                    badge: 'game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png',
+                    tag: chatId,
+                    requireInteraction: false,
+                    silent: false
+                });
+                
+                notification.onclick = function() {
+                    window.focus();
+                    if (currentUser) {
+                        openChat(fromUser);
+                    } else {
+                        sessionStorage.setItem('pendingNotificationChat', fromUser);
+                    }
+                    notification.close();
+                };
+                
+                setTimeout(() => {
+                    notification.close();
+                }, 5000);
+            } catch (e) {
+                console.error('Failed to show notification:', e);
             }
         }
 
@@ -3341,6 +3497,10 @@
                         showFirebaseError('Не удалось подключиться к базе данных.<br>Проверьте интернет или отключите блокировщик рекламы.<br><button type="button" onclick="loadFirebaseDynamically().then(() => location.reload());" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(99,102,241,0.2);color:#6366f1;font-size:0.85rem;cursor:pointer;">Попробовать снова</button>');
                     }
                 });
+            }
+            
+            if (currentUser) {
+                requestNotificationPermission();
             }
             
             handleRoute();
