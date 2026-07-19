@@ -1299,11 +1299,17 @@
         }
 
         function showScreen(screen) {
+            console.log('showScreen:', screen);
             document.querySelectorAll('.screen').forEach(s => {
                 s.classList.remove('active');
                 s.style.display = '';
             });
-            document.getElementById(screen + 'Screen').classList.add('active');
+            const screenEl = document.getElementById(screen + 'Screen');
+            if (screenEl) {
+                screenEl.classList.add('active');
+            } else {
+                console.error('Screen not found:', screen + 'Screen');
+            }
             
             const navBar = document.getElementById('navBar');
             if (screen === 'auth') {
@@ -1794,12 +1800,21 @@
                     const deviceLabel = device === 'mobile' ? 'Телефон' : device === 'desktop' ? 'ПК' : '';
                     const statusText = isOnline ? 'Online' + (deviceLabel ? ' · ' + deviceLabel : '') : 'Offline';
                     const statusColor = isOnline ? '#10b981' : '#94a3b8';
+                    const safeUsername = escapeHtml(user.username);
                     
-                    return '<div class="user-card" onclick="viewUserProfile(\'' + escapeHtml(user.username) + '\')">' +
-                        '<div class="user-card-avatar">' + avatarIcon + '</div>' +
-                        '<div class="user-card-info">' +
-                            '<div class="user-card-name">@' + escapeHtml(user.username) + '</div>' +
+                    return '<div class="user-card">' +
+                        '<div class="user-card-avatar" onclick="viewUserProfile(\'' + safeUsername + '\')">' + avatarIcon + '</div>' +
+                        '<div class="user-card-info" onclick="viewUserProfile(\'' + safeUsername + '\')">' +
+                            '<div class="user-card-name">@' + safeUsername + '</div>' +
                             '<div class="user-card-status" style="color: ' + statusColor + ';">' + statusText + '</div>' +
+                        '</div>' +
+                        '<div style="display: flex; gap: 8px;">' +
+                            '<button class="btn-chat" onclick="event.stopPropagation(); viewUserProfile(\'' + safeUsername + '\')" style="padding: 8px 12px; border-radius: 10px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 0.85rem; font-weight: 700; cursor: pointer;">' +
+                                '<i class="fas fa-user"></i>' +
+                            '</button>' +
+                            '<button class="btn-accept" onclick="event.stopPropagation(); sendFriendRequest(\'' + safeUsername + '\')" style="padding: 8px 12px; border-radius: 10px; border: none; background: linear-gradient(135deg, #10b981, #059669); color: white; font-size: 0.85rem; font-weight: 700; cursor: pointer;">' +
+                                '<i class="fas fa-user-plus"></i>' +
+                            '</button>' +
                         '</div>' +
                     '</div>';
                 }).join('');
@@ -1809,11 +1824,26 @@
         }
 
         async function viewUserProfile(username) {
-            if (!currentUser) return;
+            if (!currentUser) {
+                alert('Сначала войдите в аккаунт');
+                return;
+            }
+            if (!username) {
+                alert('Имя пользователя не указано');
+                return;
+            }
             currentProfileUsername = username;
-            navigateTo('user-profile');
+            
+            console.log('Opening profile for:', username);
             
             const content = document.getElementById('userProfileContent');
+            if (!content) {
+                console.error('userProfileContent not found');
+                alert('Ошибка: элемент профиля не найден');
+                return;
+            }
+            
+            navigateTo('user-profile');
             content.innerHTML = '<div class="loading">Загрузка профиля...</div>';
             
             if (!firebaseAvailable || !database) {
