@@ -1205,14 +1205,14 @@
             </div>
             <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 16px;">Выберите цвет или загрузите изображение для фона чата</p>
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
-                <div onclick="applyChatTheme('color', '#0f172a', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #0f172a; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#1e1b4b', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #1e1b4b; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#172554', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #172554; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#1a2e05', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #1a2e05; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#3b0764', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #3b0764; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#4c0519', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #4c0519; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#7c2d12', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #7c2d12; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#064e3b', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #064e3b; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#0f172a'); syncChatThemeToFirebase(getChatId(currentUser.username, currentChatUser), 'color', '#0f172a')" style="aspect-ratio: 1; background: #0f172a; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#1e1b4b'); syncChatThemeToFirebase(getChatId(currentUser.username, currentChatUser), 'color', '#1e1b4b')" style="aspect-ratio: 1; background: #1e1b4b; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#172554'); syncChatThemeToFirebase(getChatId(currentUser.username, currentChatUser), 'color', '#172554')" style="aspect-ratio: 1; background: #172554; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#1a2e05'); syncChatThemeToFirebase(getChatId(currentUser.username, currentChatUser), 'color', '#1a2e05')" style="aspect-ratio: 1; background: #1a2e05; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#3b0764'); syncChatThemeToFirebase(getChatId(currentUser.username, currentChatUser), 'color', '#3b0764')" style="aspect-ratio: 1; background: #3b0764; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#4c0519'); syncChatThemeToFirebase(getChatId(currentUser.username, currentChatUser), 'color', '#4c0519')" style="aspect-ratio: 1; background: #4c0519; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#7c2d12'); syncChatThemeToFirebase(getChatId(currentUser.username, currentChatUser), 'color', '#7c2d12')" style="aspect-ratio: 1; background: #7c2d12; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#064e3b'); syncChatThemeToFirebase(getChatId(currentUser.username, currentChatUser), 'color', '#064e3b')" style="aspect-ratio: 1; background: #064e3b; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
             </div>
             <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
                 <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 12px;">Или загрузите изображение</p>
@@ -2489,6 +2489,8 @@
         async function openChat(withUsername) {
             if (!currentUser) return;
             currentChatUser = withUsername;
+            
+            const chatId = getChatId(currentUser.username, withUsername);
             navigateTo('chat');
             
             const chatUserName = document.getElementById('chatUserName');
@@ -2516,8 +2518,6 @@
                 chatStatusListener.off();
                 chatStatusListener = null;
             }
-            
-            const chatId = getChatId(currentUser.username, withUsername);
             
             try {
                 const userSnapshot = await database.ref('users/' + withUsername.toLowerCase()).once('value');
@@ -2569,7 +2569,9 @@
                         if (msg.type === 'image' && msg.imageData) {
                             content = '<img src="' + msg.imageData + '" style="max-width: 200px; border-radius: 8px;" onclick="this.requestFullscreen()">';
                         } else if (msg.type === 'voice' && msg.audioData) {
-                            content = '<button onclick="playVoiceMessage(\'' + msg.audioData.replace(/'/g, "\\'") + '\', this)" style="padding: 10px 16px; background: rgba(255,255,255,0.15); border: none; color: white; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;"><i class="fas fa-play"></i> ' + (msg.duration ? Math.round(msg.duration) + 'с' : 'Голосовое') + '</button>';
+                            const voiceId = 'voice_' + (++voiceMessageId);
+                            voiceMessageMap[voiceId] = msg.audioData;
+                            content = '<button onclick="playVoiceMessage(\'' + voiceId + '\', this)" data-voice-id="' + voiceId + '" style="padding: 10px 16px; background: rgba(255,255,255,0.15); border: none; color: white; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;"><i class="fas fa-play"></i> ' + (msg.duration ? Math.round(msg.duration) + 'с' : 'Голосовое') + '</button>';
                         } else {
                             content = linkify(msg.text || '');
                         }
@@ -2629,6 +2631,10 @@
                 chatThemeListener.off();
                 chatThemeListener = null;
             }
+            for (const key in voiceMessageMap) {
+                delete voiceMessageMap[key];
+            }
+            voiceMessageId = 0;
             currentChatUser = null;
             navigateTo('profile');
         }
@@ -2641,7 +2647,7 @@
             document.getElementById('chatThemePicker').style.display = 'none';
         }
 
-        function applyChatTheme(type, value, chatId) {
+        function applyChatTheme(type, value) {
             const messagesContainer = document.getElementById('chatMessages');
             if (!messagesContainer) return;
             
@@ -2657,14 +2663,6 @@
             }
             
             saveChatTheme(type, value);
-            
-            if (chatId && firebaseAvailable && database) {
-                database.ref('chats/' + chatId + '/theme').set({
-                    type: type,
-                    value: value,
-                    updatedAt: firebase.database.ServerValue.TIMESTAMP
-                }).catch(e => console.error('Failed to sync theme:', e));
-            }
         }
 
         function saveChatTheme(type, value) {
@@ -2672,6 +2670,19 @@
                 localStorage.setItem('chatTheme', JSON.stringify({type: type, value: value}));
             } catch (e) {
                 console.error('Failed to save chat theme:', e);
+            }
+        }
+
+        async function syncChatThemeToFirebase(chatId, type, value) {
+            if (!chatId || !firebaseAvailable || !database) return;
+            try {
+                await database.ref('chats/' + chatId + '/theme').set({
+                    type: type,
+                    value: value,
+                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                });
+            } catch (e) {
+                console.error('Failed to sync theme:', e);
             }
         }
 
@@ -2689,7 +2700,7 @@
                     const saved = localStorage.getItem('chatTheme');
                     if (saved) {
                         const theme = JSON.parse(saved);
-                        applyChatTheme(theme.type, theme.value, chatId);
+                        applyChatTheme(theme.type, theme.value);
                     }
                 } catch (e) {
                     console.error('Failed to load chat theme:', e);
@@ -2701,13 +2712,13 @@
             chatThemeListener.on('value', (snapshot) => {
                 const theme = snapshot.val();
                 if (theme && theme.type && theme.value) {
-                    applyChatTheme(theme.type, theme.value, chatId);
+                    applyChatTheme(theme.type, theme.value);
                 } else {
                     try {
                         const saved = localStorage.getItem('chatTheme');
                         if (saved) {
                             const localTheme = JSON.parse(saved);
-                            applyChatTheme(localTheme.type, localTheme.value, chatId);
+                            applyChatTheme(localTheme.type, localTheme.value);
                         }
                     } catch (e) {
                         console.error('Failed to load local theme:', e);
@@ -2749,7 +2760,8 @@
             
             const reader = new FileReader();
             reader.onload = function(e) {
-                applyChatTheme('image', e.target.result, getChatId(currentUser.username, currentChatUser));
+                applyChatTheme('image', e.target.result);
+                syncChatThemeToFirebase(getChatId(currentUser.username, currentChatUser), 'image', e.target.result);
                 closeChatThemePicker();
             };
             reader.readAsDataURL(file);
@@ -2886,7 +2898,13 @@
             }
         }
 
-        function playVoiceMessage(audioData, buttonElement) {
+        let voiceMessageId = 0;
+        const voiceMessageMap = {};
+
+        function playVoiceMessage(messageId, buttonElement) {
+            const audioData = voiceMessageMap[messageId];
+            if (!audioData) return;
+            
             const audio = new Audio(audioData);
             const originalContent = buttonElement.innerHTML;
             
