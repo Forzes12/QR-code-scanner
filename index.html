@@ -692,6 +692,16 @@
                     </div>
                 </div>
                 
+                <div class="action-card" onclick="document.getElementById('avatarUploadMobile').click()">
+                    <div class="action-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <div class="action-text">
+                        <h3>Сменить аватарку</h3>
+                        <p>Загрузить фото или выбрать из списка</p>
+                    </div>
+                </div>
+                
                 <div class="action-card" onclick="logoutMobile()">
                     <div class="action-icon logout">
                         <i class="fas fa-sign-out-alt"></i>
@@ -702,6 +712,8 @@
                     </div>
                 </div>
             </div>
+            
+            <input type="file" id="avatarUploadMobile" accept="image/*" style="display: none;" onchange="handleMobileAvatarUpload(event)">
         </div>
     </div>
 
@@ -1089,6 +1101,82 @@
                     if (commentsEl) commentsEl.textContent = commentsCount;
                 });
             }
+        }
+
+        function handleMobileAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file || !currentUser) return;
+            
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Файл слишком большой! Максимальный размер 2MB');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    const maxSize = 150;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height) {
+                        if (width > maxSize) {
+                            height *= maxSize / width;
+                            width = maxSize;
+                        }
+                    } else {
+                        if (height > maxSize) {
+                            width *= maxSize / height;
+                            height = maxSize;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const compressedData = canvas.toDataURL('image/jpeg', 0.7);
+                    
+                    const avatarEl = document.getElementById('mobileAvatar');
+                    if (avatarEl) {
+                        avatarEl.innerHTML = '<img src="' + compressedData + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">';
+                    }
+                    
+                    currentUser.avatar = 'custom';
+                    currentUser.avatarData = compressedData;
+                    localStorage.setItem('mobile_avatarData', compressedData);
+                    localStorage.setItem('mobile_userAvatar', 'custom');
+                    localStorage.removeItem('mobile_avatarType');
+                    
+                    syncMobileProfileToFirebase();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function syncMobileProfileToFirebase() {
+            if (!currentUser || !firebaseAvailable || !database) return;
+            
+            const userData = {
+                username: currentUser.username,
+                avatar: currentUser.avatar || 'default',
+                avatarData: currentUser.avatarData || null,
+                downloadsCount: currentUser.downloadsCount || 0,
+                likesCount: currentUser.likesCount || 0,
+                favoriteGames: currentUser.favoriteGames || [],
+                isDeveloper: currentUser.isDeveloper || false,
+                hasBadge: currentUser.hasBadge || false,
+                createdAt: currentUser.createdAt || firebase.database.ServerValue.TIMESTAMP,
+                lastLogin: firebase.database.ServerValue.TIMESTAMP
+            };
+            
+            database.ref('users/' + currentUser.username.toLowerCase()).update(userData)
+                .catch(err => console.error('Sync profile error:', err));
         }
 
         function getAvatarIcon(avatar, avatarData) {
