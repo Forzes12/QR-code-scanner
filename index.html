@@ -580,7 +580,8 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
+            height: 100vh;
+            height: 100dvh;
             background: #0f172a;
             z-index: 2000;
             padding: 0;
@@ -592,27 +593,27 @@
         }
         .chat-messages {
             flex: 1;
+            min-height: 0;
             overflow-y: auto;
             padding: 20px;
-            padding-bottom: 90px;
+            padding-bottom: 120px;
             display: flex;
             flex-direction: column;
             gap: 12px;
+            scroll-padding-bottom: 120px;
         }
         .chat-message {
-            max-width: 75%;
             padding: 12px 16px;
+            padding-right: 32px;
             border-radius: 16px;
             word-break: break-word;
         }
         .chat-message.sent {
-            align-self: flex-end;
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
             border-bottom-right-radius: 4px;
         }
         .chat-message.received {
-            align-self: flex-start;
             background: rgba(30, 41, 59, 0.9);
             color: #f1f5f9;
             border-bottom-left-radius: 4px;
@@ -629,6 +630,48 @@
             font-size: 0.7rem;
             opacity: 0.7;
             margin-top: 4px;
+        }
+        .chat-message-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
+        }
+        .chat-message-wrapper.sent {
+            align-self: flex-end;
+        }
+        .chat-message-wrapper.received {
+            align-self: flex-start;
+        }
+        .msg-delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(239, 68, 68, 0.7);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            z-index: 5;
+            padding: 0;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .chat-message-wrapper:hover .msg-delete-btn,
+        .chat-message-wrapper:active .msg-delete-btn {
+            opacity: 1;
+        }
+        .chat-message-wrapper.sent .msg-delete-btn {
+            background: rgba(239, 68, 68, 0.8);
+        }
+        .chat-message-wrapper.received .msg-delete-btn {
+            background: rgba(239, 68, 68, 0.8);
         }
         .chat-messages.theme-image {
             background-size: cover;
@@ -1164,20 +1207,20 @@
 
     <!-- Chat Screen -->
     <div id="chatScreen" class="screen chat-screen">
-        <div class="screen-header">
-            <button class="nav-item" onclick="closeChat()" style="width: auto; flex-direction: row;">
+        <div class="screen-header" style="padding: 12px 16px; gap: 10px; flex-shrink: 0;">
+            <button class="nav-item" onclick="closeChat()" style="width: auto; flex-direction: row; padding: 8px 12px; min-height: auto; font-size: 0.9rem;">
                 <i class="fas fa-arrow-left"></i>
                 <span>Назад</span>
             </button>
-            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
-                <div id="chatUserAvatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; overflow: hidden;">
+            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                <div id="chatUserAvatar" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; overflow: hidden;">
                 </div>
                 <div style="min-width: 0; flex: 1;">
-                    <div id="chatUserName" style="color: white; font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Чат</div>
-                    <div id="chatUserStatus" style="font-size: 0.75rem; color: #94a3b8;">Offline</div>
+                    <div id="chatUserName" style="color: white; font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Чат</div>
+                    <div id="chatUserStatus" style="font-size: 0.7rem; color: #94a3b8;">Offline</div>
                 </div>
             </div>
-            <button onclick="openChatThemePicker()" style="padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 10px; cursor: pointer; flex-shrink: 0;">
+            <button onclick="openChatThemePicker()" style="padding: 6px 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; flex-shrink: 0; font-size: 0.9rem;">
                 <i class="fas fa-palette"></i>
             </button>
         </div>
@@ -2009,7 +2052,7 @@
                 if (!url.startsWith('http://') && !url.startsWith('https://')) {
                     href = 'https://' + url;
                 }
-                return '<a href="' + href + '" target="_blank" rel="noopener noreferrer" style="color: #6366f1; text-decoration: underline; word-break: break-all;">' + url + '</a>';
+                return '<a href="' + href.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener noreferrer" style="color: #6366f1; text-decoration: underline; word-break: break-all;">' + url + '</a>';
             });
         }
 
@@ -2510,6 +2553,11 @@
                 return;
             }
             
+            if (!messagesContainer) {
+                console.error('Chat messages container not found');
+                return;
+            }
+            
             if (chatListener) {
                 chatListener.off();
                 chatListener = null;
@@ -2517,6 +2565,11 @@
             if (chatStatusListener) {
                 chatStatusListener.off();
                 chatStatusListener = null;
+            }
+            
+            if (messagesContainer) {
+                messagesContainer.removeEventListener('click', handleChatContainerClick);
+                messagesContainer.addEventListener('click', handleChatContainerClick);
             }
             
             try {
@@ -2561,40 +2614,56 @@
                     }
                     
                     let unreadFromOther = false;
-                    messagesContainer.innerHTML = sortedMessages.map(([key, msg]) => {
-                        const isMe = msg.author === currentUser.username;
-                        const time = new Date(msg.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                        let content = '';
-                        
-                        if (msg.type === 'image' && msg.imageData) {
-                            content = '<img src="' + msg.imageData + '" style="max-width: 200px; border-radius: 8px;" onclick="this.requestFullscreen()">';
-                        } else if (msg.type === 'voice' && msg.audioData) {
-                            const voiceId = 'voice_' + (++voiceMessageId);
-                            voiceMessageMap[voiceId] = msg.audioData;
-                            content = '<button onclick="playVoiceMessage(\'' + voiceId + '\', this)" data-voice-id="' + voiceId + '" style="padding: 10px 16px; background: rgba(255,255,255,0.15); border: none; color: white; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;"><i class="fas fa-play"></i> ' + (msg.duration ? Math.round(msg.duration) + 'с' : 'Голосовое') + '</button>';
-                        } else {
-                            content = linkify(msg.text || '');
-                        }
-                        
-                        let readIndicator = '';
-                        if (isMe) {
-                            if (msg.read === true) {
-                                readIndicator = '<div style="font-size: 0.75rem; color: #6366f1; text-align: right; margin-top: 2px; line-height: 1;"><i class="fas fa-check" style="font-size: 0.65rem; margin-right: -5px;"></i><i class="fas fa-check"></i></div>';
+                    const renderedMessages = sortedMessages.map(([key, msg]) => {
+                        try {
+                            const isMe = msg.author === currentUser.username;
+                            const time = new Date(msg.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                            let content = '';
+                            
+                            if (msg.type === 'image' && msg.imageData) {
+                                content = '<img src="' + msg.imageData + '" style="max-width: 200px; border-radius: 8px; cursor: pointer; display: block;" loading="lazy">';
+                            } else if (msg.type === 'voice' && msg.audioData) {
+                                const voiceId = 'voice_' + key.replace(/[^a-zA-Z0-9_-]/g, '_');
+                                voiceMessageMap[voiceId] = msg.audioData;
+                                content = '<button data-voice-id="' + voiceId + '" class="voice-play-btn" style="padding: 10px 16px; background: rgba(255,255,255,0.15); border: none; color: white; border-radius: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem;"><i class="fas fa-play"></i> ' + (msg.duration ? Math.round(msg.duration) + 'с' : 'Голосовое') + '</button>';
                             } else {
-                                readIndicator = '<div style="font-size: 0.75rem; color: #64748b; text-align: right; margin-top: 2px; line-height: 1;"><i class="fas fa-check"></i></div>';
+                                content = linkify(msg.text || '');
                             }
-                        } else {
-                            if (msg.read !== true) {
-                                unreadFromOther = true;
+                            
+                            let readIndicator = '';
+                            if (isMe) {
+                                if (msg.read === true) {
+                                    readIndicator = '<div style="font-size: 0.75rem; color: #6366f1; text-align: right; margin-top: 2px; line-height: 1;"><i class="fas fa-check" style="font-size: 0.65rem; margin-right: -5px;"></i><i class="fas fa-check"></i></div>';
+                                } else {
+                                    readIndicator = '<div style="font-size: 0.75rem; color: #64748b; text-align: right; margin-top: 2px; line-height: 1;"><i class="fas fa-check"></i></div>';
+                                }
+                            } else {
+                                if (msg.read !== true) {
+                                    unreadFromOther = true;
+                                }
                             }
+                            
+                            const msgHtml = '<div class="chat-message-wrapper ' + (isMe ? 'sent' : 'received') + '">' +
+                                '<button class="msg-delete-btn" data-message-key="' + key + '" data-chat-id="' + chatId + '"><i class="fas fa-trash"></i></button>' +
+                                '<div class="chat-message ' + (isMe ? 'sent' : 'received') + '">' +
+                                    content +
+                                    '<div class="chat-message-time">' + time + '</div>' +
+                                    readIndicator +
+                                '</div>' +
+                            '</div>';
+                            
+                            if (msgHtml.length > 5000) {
+                                return '<div class="chat-message ' + (isMe ? 'sent' : 'received') + '">Сообщение слишком длинное для отображения</div>';
+                            }
+                            
+                            return msgHtml;
+                        } catch (e) {
+                            console.error('Error rendering message:', e, msg);
+                            return '<div class="chat-message received">Ошибка отображения сообщения</div>';
                         }
-                        
-                        return '<div class="chat-message ' + (isMe ? 'sent' : 'received') + '">' +
-                            content +
-                            '<div class="chat-message-time">' + time + '</div>' +
-                            readIndicator +
-                        '</div>';
-                    }).join('');
+                    });
+                    
+                    messagesContainer.innerHTML = renderedMessages.join('');
                     
                     if (unreadFromOther) {
                         const updates = {};
@@ -2611,7 +2680,17 @@
                         }
                     }
                     
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    setTimeout(() => {
+                        if (messagesContainer && messagesContainer.children.length > 0) {
+                            const lastMessage = messagesContainer.lastElementChild;
+                            if (lastMessage) {
+                                lastMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                                if (messagesContainer.scrollHeight <= messagesContainer.clientHeight) {
+                                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                                }
+                            }
+                        }
+                    }, 150);
                 });
             } catch (e) {
                 messagesContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки сообщений</p></div>';
@@ -2630,6 +2709,9 @@
             if (chatThemeListener) {
                 chatThemeListener.off();
                 chatThemeListener = null;
+            }
+            if (messagesContainer) {
+                messagesContainer.removeEventListener('click', handleChatContainerClick);
             }
             for (const key in voiceMessageMap) {
                 delete voiceMessageMap[key];
@@ -2900,6 +2982,7 @@
 
         let voiceMessageId = 0;
         const voiceMessageMap = {};
+        let voiceClickHandler = null;
 
         function playVoiceMessage(messageId, buttonElement) {
             const audioData = voiceMessageMap[messageId];
@@ -2928,6 +3011,39 @@
                     buttonElement.disabled = false;
                 }, 2000);
             };
+        }
+
+        async function deleteChatMessage(chatId, messageKey) {
+            if (!currentUser || !firebaseAvailable || !database) return;
+            
+            if (!confirm('Удалить это сообщение?')) return;
+            
+            try {
+                await database.ref('chats/' + chatId + '/messages/' + messageKey).remove();
+            } catch (err) {
+                console.error('Ошибка удаления сообщения:', err);
+                alert('Ошибка удаления сообщения');
+            }
+        }
+
+        function handleChatContainerClick(e) {
+            const deleteBtn = e.target.closest('.msg-delete-btn');
+            if (deleteBtn) {
+                const messageKey = deleteBtn.getAttribute('data-message-key');
+                const chatId = deleteBtn.getAttribute('data-chat-id');
+                if (messageKey && chatId) {
+                    deleteChatMessage(chatId, messageKey);
+                }
+                return;
+            }
+            
+            if (e.target.closest && e.target.closest('.voice-play-btn')) {
+                const btn = e.target.closest('.voice-play-btn');
+                const voiceId = btn.getAttribute('data-voice-id');
+                if (voiceId && voiceMessageMap[voiceId]) {
+                    playVoiceMessage(voiceId, btn);
+                }
+            }
         }
 
         async function removeFromBlacklist(username) {
