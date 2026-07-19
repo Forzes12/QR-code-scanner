@@ -7,11 +7,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Forzes HUB">
-    <link rel="icon" type="image/png" sizes="192x192" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png">
-    <link rel="apple-touch-icon" sizes="512x512" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png">
-    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=1">
+    <link rel="icon" type="image/png" sizes="512x512" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=1">
+    <link rel="apple-touch-icon" sizes="192x192" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=1">
+    <link rel="apple-touch-icon" sizes="512x512" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png?v=1">
+    <link rel="manifest" href="manifest.json?v=1">
     <title>Forzes HUB Mobile</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -119,13 +119,26 @@
             border-radius: 10px;
         }
         
-        .profile-screen { padding: 0; }
+        .profile-screen { 
+            padding: 0; 
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
         .profile-header {
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             padding: 35px 16px 28px;
             text-align: center;
             position: relative;
             overflow: hidden;
+            flex-shrink: 0;
+        }
+        .profile-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 0 100px;
+            -webkit-overflow-scrolling: touch;
         }
         .profile-header::before {
             content: '';
@@ -210,7 +223,7 @@
             gap: 10px;
             padding: 16px;
             background: #1e293b;
-            margin: -16px 12px 16px;
+            margin: 16px 12px 16px;
             border-radius: 18px;
             border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 8px 32px rgba(0,0,0,0.2);
@@ -232,7 +245,7 @@
             margin-top: 4px;
         }
         .actions {
-            padding: 0 12px 16px;
+            padding: 0 12px;
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -249,6 +262,7 @@
             transition: all 0.2s;
             min-height: 80px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            flex-shrink: 0;
         }
         .action-card:active { transform: scale(0.98); background: rgba(99, 102, 241, 0.2); }
         .action-icon {
@@ -625,59 +639,61 @@
             </div>
         </div>
         
-        <div class="stats-grid">
-            <div class="stat-item">
-                <div class="stat-value" id="mobileDownloads">0</div>
-                <div class="stat-label">Скачиваний</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="mobileLikes">0</div>
-                <div class="stat-label">Нравится</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="mobileComments">0</div>
-                <div class="stat-label">Комментариев</div>
-            </div>
-        </div>
-        
-        <div class="actions">
-            <div class="action-card" onclick="openQRScanner()">
-                <div class="action-icon qr">
-                    <i class="fas fa-qrcode"></i>
+        <div class="profile-content">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="mobileDownloads">0</div>
+                    <div class="stat-label">Скачиваний</div>
                 </div>
-                <div class="action-text">
-                    <h3>Сканировать QR-код ПК</h3>
-                    <p>Войти на компьютере через QR</p>
+                <div class="stat-item">
+                    <div class="stat-value" id="mobileLikes">0</div>
+                    <div class="stat-label">Нравится</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="mobileComments">0</div>
+                    <div class="stat-label">Комментариев</div>
                 </div>
             </div>
             
-            <div class="action-card" onclick="showComments()">
-                <div class="action-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                    <i class="fas fa-comments"></i>
+            <div class="actions">
+                <div class="action-card" onclick="openQRScanner()">
+                    <div class="action-icon qr">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <div class="action-text">
+                        <h3>Сканировать QR-код ПК</h3>
+                        <p>Войти на компьютере через QR</p>
+                    </div>
                 </div>
-                <div class="action-text">
-                    <h3>Комментарии</h3>
-                    <p>Просмотреть свои комментарии</p>
+                
+                <div class="action-card" onclick="showComments()">
+                    <div class="action-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="action-text">
+                        <h3>Комментарии</h3>
+                        <p>Просмотреть свои комментарии</p>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="action-card" onclick="showLikes()">
-                <div class="action-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
-                    <i class="fas fa-heart"></i>
+                
+                <div class="action-card" onclick="showLikes()">
+                    <div class="action-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <div class="action-text">
+                        <h3>Понравившиеся игры</h3>
+                        <p>Просмотреть лайкнутые игры</p>
+                    </div>
                 </div>
-                <div class="action-text">
-                    <h3>Понравившиеся игры</h3>
-                    <p>Просмотреть лайкнутые игры</p>
-                </div>
-            </div>
-            
-            <div class="action-card" onclick="logoutMobile()">
-                <div class="action-icon logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                </div>
-                <div class="action-text">
-                    <h3>Выйти из аккаунта</h3>
-                    <p>Выйти из приложения</p>
+                
+                <div class="action-card" onclick="logoutMobile()">
+                    <div class="action-icon logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </div>
+                    <div class="action-text">
+                        <h3>Выйти из аккаунта</h3>
+                        <p>Выйти из приложения</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -686,7 +702,7 @@
     <!-- Comments Screen -->
     <div id="commentsScreen" class="screen comments-screen">
         <div class="screen-header">
-            <button class="nav-item" onclick="showScreen('profile')" style="width: auto; flex-direction: row;">
+            <button class="nav-item" onclick="navigateTo('profile')" style="width: auto; flex-direction: row;">
                 <i class="fas fa-arrow-left"></i>
                 <span>Назад</span>
             </button>
@@ -702,7 +718,7 @@
     <!-- Likes Screen -->
     <div id="likesScreen" class="screen likes-screen">
         <div class="screen-header">
-            <button class="nav-item" onclick="showScreen('profile')" style="width: auto; flex-direction: row;">
+            <button class="nav-item" onclick="navigateTo('profile')" style="width: auto; flex-direction: row;">
                 <i class="fas fa-arrow-left"></i>
                 <span>Назад</span>
             </button>
@@ -750,7 +766,7 @@
 
     <!-- Bottom Navigation -->
     <nav class="nav-bar" id="navBar" style="display: none;">
-        <button class="nav-item active" onclick="showScreen('profile')">
+        <button class="nav-item active" onclick="navigateTo('profile')">
             <i class="fas fa-user"></i>
             <span>Профиль</span>
         </button>
@@ -878,6 +894,27 @@
                 loadProfile();
             }
         }
+        
+        function navigateTo(screen) {
+            showScreen(screen);
+            window.location.hash = '#/' + screen;
+        }
+        
+        function handleRoute() {
+            const hash = window.location.hash.replace('#/', '') || '';
+            const validScreens = ['auth', 'profile', 'scanner', 'comments', 'likes'];
+            let screen = validScreens.includes(hash) ? hash : 'auth';
+            
+            if (!currentUser && screen !== 'auth') {
+                screen = 'auth';
+            } else if (currentUser && screen === 'auth') {
+                screen = 'profile';
+            }
+            
+            showScreen(screen);
+        }
+        
+        window.addEventListener('hashchange', handleRoute);
 
         async function waitForFirebase(timeout = 10000) {
             const startTime = Date.now();
@@ -939,13 +976,14 @@
                 currentUser = user;
                 localStorage.setItem('mobile_username', username);
                 localStorage.setItem('mobile_password', password);
+                sessionStorage.setItem('mobile_currentUser', JSON.stringify(user));
                 
                 await database.ref('users/' + username.toLowerCase()).update({
                     lastLogin: firebase.database.ServerValue.TIMESTAMP
                 });
                 
                 setupMobilePresence(username);
-                showScreen('profile');
+                navigateTo('profile');
             } catch (err) {
                 console.error('Mobile auth error:', err);
                 errorDiv.textContent = 'Ошибка соединения. Проверьте интернет и попробуйте снова.';
@@ -1036,7 +1074,7 @@
 
         async function showComments() {
             if (!currentUser) return;
-            showScreen('comments');
+            navigateTo('comments');
             const list = document.getElementById('commentsList');
             list.innerHTML = '<div class="loading">Загрузка комментариев...</div>';
             
@@ -1089,7 +1127,7 @@
 
         async function showLikes() {
             if (!currentUser) return;
-            showScreen('likes');
+            navigateTo('likes');
             const list = document.getElementById('likesList');
             list.innerHTML = '<div class="loading">Загрузка...</div>';
             
@@ -1160,7 +1198,7 @@
 
         // QR Scanner
         function openQRScanner() {
-            showScreen('scanner');
+            navigateTo('scanner');
             
             const scanZone = document.getElementById('scanZone');
             if (scanZone) {
@@ -1243,7 +1281,7 @@
                 scanZone.classList.remove('scanning', 'success', 'scanIdle');
             }
             stopQRScanner();
-            showScreen('profile');
+            navigateTo('profile');
         }
 
         function stopQRScanner() {
@@ -1282,7 +1320,7 @@
                     statusEl.textContent = 'Подтверждение отправлено!';
                     setTimeout(() => {
                         stopQRScanner();
-                        showScreen('profile');
+                        navigateTo('profile');
                     }, 1500);
                 }).catch(err => {
                     statusEl.textContent = 'Ошибка отправки';
@@ -1304,6 +1342,7 @@
             }
             localStorage.removeItem('mobile_username');
             localStorage.removeItem('mobile_password');
+            sessionStorage.removeItem('mobile_currentUser');
             currentUser = null;
             stopQRScanner();
             
@@ -1313,7 +1352,7 @@
             const errorDiv = document.getElementById('mobileAuthError');
             if (errorDiv) errorDiv.style.display = 'none';
             
-            showScreen('auth');
+            navigateTo('auth');
             
             const navBar = document.getElementById('navBar');
             navBar.style.display = 'none';
@@ -1334,7 +1373,16 @@
                 document.getElementById('mobilePassword').value = savedPassword;
             }
             
-            showScreen('auth');
+            const savedUser = sessionStorage.getItem('mobile_currentUser');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                } catch (e) {
+                    currentUser = null;
+                }
+            }
+            
+            handleRoute();
             
             const scannerScreen = document.getElementById('scannerScreen');
             if (scannerScreen) {
