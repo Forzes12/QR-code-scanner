@@ -567,6 +567,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 20px;
+            padding-bottom: 90px;
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -599,6 +600,13 @@
             opacity: 0.7;
             margin-top: 4px;
         }
+        .chat-message-read {
+            font-size: 0.7rem;
+            color: #6366f1;
+            margin-top: 2px;
+            text-align: right;
+            font-weight: 600;
+        }
         .chat-messages.theme-image {
             background-size: cover;
             background-position: center;
@@ -611,11 +619,17 @@
             background: rgba(30, 41, 59, 0.9);
         }
         .chat-input-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             display: flex;
             gap: 10px;
             padding: 12px 20px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
             background: rgba(30, 41, 59, 0.95);
             border-top: 1px solid rgba(255,255,255,0.1);
+            z-index: 10;
         }
         .chat-input-area textarea {
             flex: 1;
@@ -883,14 +897,14 @@
         <div class="auth-card">
             <h1><i class="fas fa-gamepad"></i> Forzes HUB</h1>
             <p class="subtitle">Вход в мобильное приложение</p>
-            <form id="mobileAuthForm">
+            <form id="mobileAuthForm" autocomplete="off">
                 <div class="form-group">
                     <label>Имя пользователя</label>
-                    <input type="text" id="mobileUsername" placeholder="Введите имя пользователя" required autocomplete="username" autocapitalize="none">
+                    <input type="text" id="mobileUsername" placeholder="Введите имя пользователя" required autocomplete="off" autocapitalize="none" readonly onfocus="if(this.readOnly)this.readOnly=false;" style="caret-color: white;">
                 </div>
                 <div class="form-group">
                     <label>Пароль</label>
-                    <input type="password" id="mobilePassword" placeholder="Введите пароль" required autocomplete="current-password">
+                    <input type="password" id="mobilePassword" placeholder="Введите пароль" required autocomplete="off" readonly onfocus="if(this.readOnly)this.readOnly=false;" style="caret-color: white;">
                 </div>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-sign-in-alt"></i> Войти
@@ -1101,23 +1115,28 @@
                 <i class="fas fa-arrow-left"></i>
                 <span>Назад</span>
             </button>
-            <h2 id="chatTitle">Чат</h2>
-            <button onclick="openChatThemePicker()" style="margin-left: auto; padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 10px; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+                <div id="chatUserAvatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; overflow: hidden;">
+                </div>
+                <div style="min-width: 0; flex: 1;">
+                    <div id="chatUserName" style="color: white; font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Чат</div>
+                    <div id="chatUserStatus" style="font-size: 0.75rem; color: #94a3b8;">Offline</div>
+                </div>
+            </div>
+            <button onclick="openChatThemePicker()" style="padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 10px; cursor: pointer; flex-shrink: 0;">
                 <i class="fas fa-palette"></i>
             </button>
         </div>
-        <div class="screen-content" style="display: flex; flex-direction: column;">
-            <div id="chatMessages" class="chat-messages"></div>
-            <div class="chat-input-area">
-                <textarea id="chatInput" placeholder="Сообщение..." rows="1"></textarea>
-                <input type="file" id="chatImageInput" accept="image/*" style="display: none;" onchange="sendChatImage(event)">
-                <button onclick="document.getElementById('chatImageInput').click()" style="padding: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; cursor: pointer;">
-                    <i class="fas fa-image"></i>
-                </button>
-                <button onclick="sendChatMessage()" style="padding: 12px 20px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 12px; cursor: pointer; font-weight: 700;">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-area">
+            <textarea id="chatInput" placeholder="Сообщение..." rows="1"></textarea>
+            <input type="file" id="chatImageInput" accept="image/*" style="display: none;" onchange="sendChatImage(event)">
+            <button onclick="document.getElementById('chatImageInput').click()" style="padding: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; cursor: pointer;">
+                <i class="fas fa-image"></i>
+            </button>
+            <button onclick="sendChatMessage()" style="padding: 12px 20px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 12px; cursor: pointer; font-weight: 700;">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 
@@ -1229,6 +1248,7 @@
         let requestsListener = null;
         let blacklistListener = null;
         let chatListener = null;
+        let chatStatusListener = null;
         let currentChatUser = null;
         let currentFriendsTab = 'friends';
 
@@ -1360,6 +1380,8 @@
             const navBar = document.getElementById('navBar');
             if (screen === 'auth') {
                 navBar.style.display = 'none';
+            } else if (['chat', 'comments', 'likes', 'search', 'user-profile', 'friends'].includes(screen)) {
+                navBar.style.display = 'none';
             } else {
                 navBar.style.display = 'flex';
             }
@@ -1388,6 +1410,10 @@
                 if (chatListener) {
                     chatListener.off();
                     chatListener = null;
+                }
+                if (chatStatusListener) {
+                    chatStatusListener.off();
+                    chatStatusListener = null;
                 }
                 currentChatUser = null;
             }
@@ -1602,6 +1628,7 @@
                     localStorage.setItem('mobile_avatarData', compressedData);
                     localStorage.setItem('mobile_userAvatar', 'custom');
                     localStorage.removeItem('mobile_avatarType');
+                    sessionStorage.setItem('mobile_currentUser', JSON.stringify(currentUser));
                     
                     syncMobileProfileToFirebase();
                 };
@@ -2079,7 +2106,7 @@
             
             try {
                 friendsListener = database.ref('friends/' + currentUser.username.toLowerCase());
-                friendsListener.on('value', (snapshot) => {
+                friendsListener.on('value', async (snapshot) => {
                     const friends = snapshot.val() || {};
                     const friendUsernames = Object.keys(friends).filter(f => friends[f] === 'accepted');
                     
@@ -2088,13 +2115,24 @@
                         return;
                     }
                     
+                    const usersSnapshot = await database.ref('users').once('value');
+                    const allUsers = usersSnapshot.val() || {};
+                    
                     list.innerHTML = friendUsernames.map(username => {
-                        const avatarIcon = getAvatarIcon('default', null);
+                        const userData = allUsers[username.toLowerCase()] || {};
+                        const avatarIcon = getAvatarIcon(userData.avatar || 'default', userData.avatarData);
+                        const status = userData.status || {};
+                        const isOnline = status.isOnline === true;
+                        const device = status.device || '';
+                        const deviceLabel = device === 'mobile' ? 'Телефон' : device === 'desktop' ? 'ПК' : '';
+                        const statusText = isOnline ? 'Online' + (deviceLabel ? ' · ' + deviceLabel : '') : 'Offline';
+                        const statusColor = isOnline ? '#10b981' : '#94a3b8';
+                        
                         return '<div class="user-card" onclick="openChat(\'' + escapeHtml(username) + '\')">' +
                             '<div class="user-card-avatar">' + avatarIcon + '</div>' +
                             '<div class="user-card-info">' +
                                 '<div class="user-card-name">@' + escapeHtml(username) + '</div>' +
-                                '<div class="user-card-status" style="color: #10b981;">Online</div>' +
+                                '<div class="user-card-status" style="color: ' + statusColor + ';">' + statusText + '</div>' +
                             '</div>' +
                             '<button class="btn-chat" onclick="event.stopPropagation(); openChat(\'' + escapeHtml(username) + '\')">Чат</button>' +
                         '</div>';
@@ -2121,7 +2159,7 @@
             
             try {
                 requestsListener = database.ref('friend_requests/' + currentUser.username.toLowerCase());
-                requestsListener.on('value', (snapshot) => {
+                requestsListener.on('value', async (snapshot) => {
                     const requests = snapshot.val() || {};
                     const requestKeys = Object.keys(requests);
                     
@@ -2130,9 +2168,14 @@
                         return;
                     }
                     
+                    const usersSnapshot = await database.ref('users').once('value');
+                    const allUsers = usersSnapshot.val() || {};
+                    
                     list.innerHTML = requestKeys.map(fromUser => {
+                        const userData = allUsers[fromUser.toLowerCase()] || {};
+                        const avatarIcon = getAvatarIcon(userData.avatar || 'default', userData.avatarData);
                         return '<div class="friend-request-card">' +
-                            '<div class="user-card-avatar" style="width: 48px; height: 48px; font-size: 20px;">' + getAvatarIcon('default', null) + '</div>' +
+                            '<div class="user-card-avatar" style="width: 48px; height: 48px; font-size: 20px;">' + avatarIcon + '</div>' +
                             '<div class="user-card-info">' +
                                 '<div class="user-card-name">@' + escapeHtml(fromUser) + '</div>' +
                                 '<div class="user-card-status">Хочет добавить вас в друзья</div>' +
@@ -2165,7 +2208,7 @@
             
             try {
                 blacklistListener = database.ref('blacklists/' + currentUser.username.toLowerCase());
-                blacklistListener.on('value', (snapshot) => {
+                blacklistListener.on('value', async (snapshot) => {
                     const blocked = snapshot.val() || {};
                     const blockedUsers = Object.keys(blocked);
                     
@@ -2174,9 +2217,14 @@
                         return;
                     }
                     
+                    const usersSnapshot = await database.ref('users').once('value');
+                    const allUsers = usersSnapshot.val() || {};
+                    
                     list.innerHTML = blockedUsers.map(username => {
+                        const userData = allUsers[username.toLowerCase()] || {};
+                        const avatarIcon = getAvatarIcon(userData.avatar || 'default', userData.avatarData);
                         return '<div class="user-card">' +
-                            '<div class="user-card-avatar">' + getAvatarIcon('default', null) + '</div>' +
+                            '<div class="user-card-avatar">' + avatarIcon + '</div>' +
                             '<div class="user-card-info">' +
                                 '<div class="user-card-name">@' + escapeHtml(username) + '</div>' +
                                 '<div class="user-card-status" style="color: #ef4444;">Заблокирован</div>' +
@@ -2251,8 +2299,15 @@
             currentChatUser = withUsername;
             navigateTo('chat');
             
-            document.getElementById('chatTitle').textContent = '@' + withUsername;
+            const chatUserName = document.getElementById('chatUserName');
+            const chatUserAvatar = document.getElementById('chatUserAvatar');
+            const chatUserStatus = document.getElementById('chatUserStatus');
             const messagesContainer = document.getElementById('chatMessages');
+            
+            if (chatUserName) chatUserName.textContent = '@' + withUsername;
+            if (chatUserAvatar) chatUserAvatar.innerHTML = '<i class="fas fa-user" style="font-size: 16px;"></i>';
+            if (chatUserStatus) chatUserStatus.textContent = 'Offline';
+            
             messagesContainer.innerHTML = '<div class="loading">Загрузка сообщений...</div>';
             loadChatTheme();
             
@@ -2265,10 +2320,40 @@
                 chatListener.off();
                 chatListener = null;
             }
+            if (chatStatusListener) {
+                chatStatusListener.off();
+                chatStatusListener = null;
+            }
             
             const chatId = getChatId(currentUser.username, withUsername);
             
             try {
+                const userSnapshot = await database.ref('users/' + withUsername.toLowerCase()).once('value');
+                const userData = userSnapshot.val();
+                
+                if (userData) {
+                    if (chatUserAvatar) {
+                        const avatarIcon = getAvatarIcon(userData.avatar || 'default', userData.avatarData);
+                        chatUserAvatar.innerHTML = avatarIcon;
+                    }
+                }
+                
+                chatStatusListener = database.ref('users/' + withUsername.toLowerCase() + '/status');
+                chatStatusListener.on('value', (snapshot) => {
+                    const status = snapshot.val() || {};
+                    const isOnline = status.isOnline === true;
+                    const device = status.device || '';
+                    const deviceLabel = device === 'mobile' ? 'Телефон' : device === 'desktop' ? 'ПК' : '';
+                    
+                    if (chatUserStatus) {
+                        if (isOnline) {
+                            chatUserStatus.innerHTML = '<span style="color: #10b981;">● Online</span>' + (deviceLabel ? ' · ' + deviceLabel : '');
+                        } else {
+                            chatUserStatus.textContent = 'Offline';
+                        }
+                    }
+                });
+                
                 chatListener = database.ref('chats/' + chatId + '/messages');
                 chatListener.on('value', (snapshot) => {
                     const messages = snapshot.val() || {};
@@ -2283,6 +2368,7 @@
                         return;
                     }
                     
+                    let unreadFromOther = false;
                     messagesContainer.innerHTML = sortedMessages.map(([key, msg]) => {
                         const isMe = msg.author === currentUser.username;
                         const time = new Date(msg.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
@@ -2294,11 +2380,38 @@
                             content = escapeHtml(msg.text || '');
                         }
                         
+                        let readIndicator = '';
+                        if (isMe) {
+                            if (msg.read === true) {
+                                readIndicator = '<div class="chat-message-read" style="font-size: 0.7rem; color: #6366f1; margin-top: 2px; text-align: right;">Прочитано</div>';
+                            }
+                        } else {
+                            if (msg.read !== true) {
+                                unreadFromOther = true;
+                            }
+                        }
+                        
                         return '<div class="chat-message ' + (isMe ? 'sent' : 'received') + '">' +
                             content +
                             '<div class="chat-message-time">' + time + '</div>' +
+                            readIndicator +
                         '</div>';
                     }).join('');
+                    
+                    if (unreadFromOther) {
+                        const updates = {};
+                        sortedMessages.forEach(([key, msg]) => {
+                            if (msg.author !== currentUser.username && msg.read !== true) {
+                                updates['chats/' + chatId + '/messages/' + key + '/read'] = true;
+                            }
+                        });
+                        
+                        if (Object.keys(updates).length > 0) {
+                            database.ref().update(updates).catch(e => {
+                                console.error('Failed to mark messages as read:', e);
+                            });
+                        }
+                    }
                     
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 });
@@ -2311,6 +2424,10 @@
             if (chatListener) {
                 chatListener.off();
                 chatListener = null;
+            }
+            if (chatStatusListener) {
+                chatStatusListener.off();
+                chatStatusListener = null;
             }
             currentChatUser = null;
             navigateTo('profile');
@@ -2410,7 +2527,8 @@
                     author: currentUser.username,
                     text: text,
                     type: 'text',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    read: false
                 });
                 input.value = '';
             } catch (e) {
@@ -2437,7 +2555,8 @@
                         author: currentUser.username,
                         imageData: e.target.result,
                         type: 'image',
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        read: false
                     });
                 } catch (err) {
                     console.error('Ошибка отправки изображения:', err);
@@ -2720,6 +2839,16 @@
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
+                    
+                    const savedAvatarData = localStorage.getItem('mobile_avatarData');
+                    const savedAvatarType = localStorage.getItem('mobile_userAvatar');
+                    if (savedAvatarData && savedAvatarType === 'custom') {
+                        currentUser.avatar = 'custom';
+                        currentUser.avatarData = savedAvatarData;
+                    } else if (savedAvatarType && savedAvatarType !== 'custom') {
+                        currentUser.avatar = savedAvatarType;
+                        currentUser.avatarData = null;
+                    }
                 } catch (e) {
                     currentUser = null;
                 }
