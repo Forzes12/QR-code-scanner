@@ -599,6 +599,17 @@
             opacity: 0.7;
             margin-top: 4px;
         }
+        .chat-messages.theme-image {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .chat-messages.theme-image .chat-message.sent {
+            background: rgba(99, 102, 241, 0.9);
+        }
+        .chat-messages.theme-image .chat-message.received {
+            background: rgba(30, 41, 59, 0.9);
+        }
         .chat-input-area {
             display: flex;
             gap: 10px;
@@ -1091,6 +1102,9 @@
                 <span>Назад</span>
             </button>
             <h2 id="chatTitle">Чат</h2>
+            <button onclick="openChatThemePicker()" style="margin-left: auto; padding: 8px 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 10px; cursor: pointer;">
+                <i class="fas fa-palette"></i>
+            </button>
         </div>
         <div class="screen-content" style="display: flex; flex-direction: column;">
             <div id="chatMessages" class="chat-messages"></div>
@@ -1102,6 +1116,38 @@
                 </button>
                 <button onclick="sendChatMessage()" style="padding: 12px 20px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 12px; cursor: pointer; font-weight: 700;">
                     <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chatThemePicker" onclick="if(event.target===this)closeChatThemePicker()" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 3000; align-items: flex-end; justify-content: center;">
+        <div style="width: 100%; max-height: 70%; background: #1e293b; border-radius: 24px 24px 0 0; padding: 24px; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="color: white; margin: 0;">Тема чата</h3>
+                <button onclick="closeChatThemePicker()" style="background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 16px;">Выберите цвет или загрузите изображение для фона чата</p>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+                <div onclick="applyChatTheme('color', '#0f172a')" style="aspect-ratio: 1; background: #0f172a; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#1e1b4b')" style="aspect-ratio: 1; background: #1e1b4b; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#172554')" style="aspect-ratio: 1; background: #172554; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#1a2e05')" style="aspect-ratio: 1; background: #1a2e05; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#3b0764')" style="aspect-ratio: 1; background: #3b0764; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#4c0519')" style="aspect-ratio: 1; background: #4c0519; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#7c2d12')" style="aspect-ratio: 1; background: #7c2d12; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#064e3b')" style="aspect-ratio: 1; background: #064e3b; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+            </div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 12px;">Или загрузите изображение</p>
+                <input type="file" id="chatThemeImageInput" accept="image/*" style="display: none;" onchange="handleChatThemeImageUpload(event)">
+                <button onclick="document.getElementById('chatThemeImageInput').click()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 12px; cursor: pointer; font-size: 1rem; font-weight: 700;">
+                    <i class="fas fa-image"></i> Загрузить изображение
+                </button>
+            </div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-top: 20px;">
+                <button onclick="resetChatTheme()" style="width: 100%; padding: 14px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; border-radius: 12px; cursor: pointer; font-size: 1rem; font-weight: 700;">
+                    <i class="fas fa-undo"></i> Сбросить тему
                 </button>
             </div>
         </div>
@@ -2208,6 +2254,7 @@
             document.getElementById('chatTitle').textContent = '@' + withUsername;
             const messagesContainer = document.getElementById('chatMessages');
             messagesContainer.innerHTML = '<div class="loading">Загрузка сообщений...</div>';
+            loadChatTheme();
             
             if (!firebaseAvailable || !database) {
                 messagesContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Нет подключения к базе данных</p></div>';
@@ -2267,6 +2314,87 @@
             }
             currentChatUser = null;
             navigateTo('profile');
+        }
+
+        function openChatThemePicker() {
+            document.getElementById('chatThemePicker').style.display = 'flex';
+        }
+
+        function closeChatThemePicker() {
+            document.getElementById('chatThemePicker').style.display = 'none';
+        }
+
+        function applyChatTheme(type, value) {
+            const messagesContainer = document.getElementById('chatMessages');
+            if (!messagesContainer) return;
+            
+            messagesContainer.classList.remove('theme-image');
+            messagesContainer.style.background = '';
+            messagesContainer.style.backgroundImage = '';
+            
+            if (type === 'color') {
+                messagesContainer.style.background = value;
+            } else if (type === 'image') {
+                messagesContainer.style.backgroundImage = 'url(' + value + ')';
+                messagesContainer.classList.add('theme-image');
+            }
+            
+            saveChatTheme(type, value);
+        }
+
+        function saveChatTheme(type, value) {
+            try {
+                localStorage.setItem('chatTheme', JSON.stringify({type: type, value: value}));
+            } catch (e) {
+                console.error('Failed to save chat theme:', e);
+            }
+        }
+
+        function loadChatTheme() {
+            const messagesContainer = document.getElementById('chatMessages');
+            if (!messagesContainer) return;
+            
+            try {
+                const saved = localStorage.getItem('chatTheme');
+                if (saved) {
+                    const theme = JSON.parse(saved);
+                    applyChatTheme(theme.type, theme.value);
+                }
+            } catch (e) {
+                console.error('Failed to load chat theme:', e);
+            }
+        }
+
+        function resetChatTheme() {
+            const messagesContainer = document.getElementById('chatMessages');
+            if (messagesContainer) {
+                messagesContainer.classList.remove('theme-image');
+                messagesContainer.style.background = '';
+                messagesContainer.style.backgroundImage = '';
+            }
+            try {
+                localStorage.removeItem('chatTheme');
+            } catch (e) {
+                console.error('Failed to reset chat theme:', e);
+            }
+            closeChatThemePicker();
+        }
+
+        function handleChatThemeImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Файл слишком большой! Максимальный размер 2MB');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                applyChatTheme('image', e.target.result);
+                closeChatThemePicker();
+            };
+            reader.readAsDataURL(file);
         }
 
         async function sendChatMessage() {
