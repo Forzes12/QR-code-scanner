@@ -1600,10 +1600,26 @@
         let gamesData = {};
         async function loadGamesData() {
             if (Object.keys(gamesData).length > 0) return;
+            
+            const cached = sessionStorage.getItem('gamesData');
+            if (cached) {
+                try {
+                    gamesData = JSON.parse(cached);
+                    return;
+                } catch (e) {
+                    sessionStorage.removeItem('gamesData');
+                }
+            }
+            
             try {
                 const response = await fetch('assets/data/games.json?v=3');
                 if (response.ok) {
                     gamesData = await response.json();
+                    try {
+                        sessionStorage.setItem('gamesData', JSON.stringify(gamesData));
+                    } catch (e) {
+                        console.warn('Failed to cache games data');
+                    }
                 }
             } catch (e) {
                 console.error('Failed to load games data:', e);
@@ -1947,13 +1963,6 @@
             currentProfileUsername = null;
             navigateTo('profile');
         }
-
-        let friendsListener = null;
-        let requestsListener = null;
-        let blacklistListener = null;
-        let chatListener = null;
-        let currentChatUser = null;
-        let currentFriendsTab = 'friends';
 
         function showFriends() {
             if (!currentUser) return;
@@ -2535,7 +2544,6 @@
             
             try {
                 initFirebase();
-                loadGamesData();
             } catch (e) {
                 console.error('Init error:', e);
             }
@@ -2560,7 +2568,7 @@
             }
             
             if (!firebaseAvailable || !database) {
-                const hasFirebase = waitForFirebase(15000);
+                const hasFirebase = waitForFirebase(3000);
                 hasFirebase.then(ok => {
                     if (!ok) {
                         showFirebaseError('Не удалось подключиться к базе данных.<br>Проверьте интернет или отключите блокировщик рекламы.<br><button type="button" onclick="loadFirebaseDynamically().then(() => location.reload());" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(99,102,241,0.2);color:#6366f1;font-size:0.85rem;cursor:pointer;">Попробовать снова</button>');
