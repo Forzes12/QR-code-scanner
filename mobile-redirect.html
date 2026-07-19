@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0; url=mobile.html">
+    <link rel="icon" type="image/png" sizes="192x192" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png">
+    <title>Forzes HUB Mobile</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0f172a;
+            color: #f1f5f9;
+            font-family: system-ui, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .loader {
+            text-align: center;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        a { color: #6366f1; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="loader">
+        <div class="spinner"></div>
+        <p>Перенаправление в мобильное приложение...</p>
+        <p><a href="mobile.html">Открыть сейчас</a></p>
+    </div>
+</body>
+</html>
