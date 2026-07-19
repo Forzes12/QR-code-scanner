@@ -622,17 +622,13 @@
             border-radius: 8px;
             margin-top: 8px;
         }
+        .chat-message button {
+            margin-top: 4px;
+        }
         .chat-message-time {
             font-size: 0.7rem;
             opacity: 0.7;
             margin-top: 4px;
-        }
-        .chat-message-read {
-            font-size: 0.7rem;
-            color: #6366f1;
-            margin-top: 2px;
-            text-align: right;
-            font-weight: 600;
         }
         .chat-messages.theme-image {
             background-size: cover;
@@ -1192,6 +1188,9 @@
             <button onclick="document.getElementById('chatImageInput').click()" style="padding: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; cursor: pointer;">
                 <i class="fas fa-image"></i>
             </button>
+            <button id="voiceRecordBtn" onmousedown="startVoiceRecording()" onmouseup="stopVoiceRecording()" ontouchstart="startVoiceRecording()" ontouchend="stopVoiceRecording()" style="padding: 12px 16px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; cursor: pointer;">
+                <i class="fas fa-microphone"></i>
+            </button>
             <button onclick="sendChatMessage()" style="padding: 12px 20px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: white; border-radius: 12px; cursor: pointer; font-weight: 700;">
                 <i class="fas fa-paper-plane"></i>
             </button>
@@ -1206,14 +1205,14 @@
             </div>
             <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 16px;">Выберите цвет или загрузите изображение для фона чата</p>
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
-                <div onclick="applyChatTheme('color', '#0f172a')" style="aspect-ratio: 1; background: #0f172a; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#1e1b4b')" style="aspect-ratio: 1; background: #1e1b4b; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#172554')" style="aspect-ratio: 1; background: #172554; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#1a2e05')" style="aspect-ratio: 1; background: #1a2e05; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#3b0764')" style="aspect-ratio: 1; background: #3b0764; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#4c0519')" style="aspect-ratio: 1; background: #4c0519; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#7c2d12')" style="aspect-ratio: 1; background: #7c2d12; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
-                <div onclick="applyChatTheme('color', '#064e3b')" style="aspect-ratio: 1; background: #064e3b; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#0f172a', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #0f172a; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#1e1b4b', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #1e1b4b; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#172554', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #172554; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#1a2e05', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #1a2e05; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#3b0764', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #3b0764; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#4c0519', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #4c0519; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#7c2d12', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #7c2d12; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
+                <div onclick="applyChatTheme('color', '#064e3b', getChatId(currentUser.username, currentChatUser))" style="aspect-ratio: 1; background: #064e3b; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); cursor: pointer;"></div>
             </div>
             <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
                 <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 12px;">Или загрузите изображение</p>
@@ -1307,6 +1306,10 @@
         let blacklistListener = null;
         let chatListener = null;
         let chatStatusListener = null;
+        let chatThemeListener = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
         let currentChatUser = null;
         let currentFriendsTab = 'friends';
 
@@ -1472,6 +1475,10 @@
                 if (chatStatusListener) {
                     chatStatusListener.off();
                     chatStatusListener = null;
+                }
+                if (chatThemeListener) {
+                    chatThemeListener.off();
+                    chatThemeListener = null;
                 }
                 currentChatUser = null;
             }
@@ -1994,6 +2001,18 @@
             return div.innerHTML;
         }
 
+        function linkify(text) {
+            const escaped = escapeHtml(text);
+            const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+            return escaped.replace(urlRegex, function(url) {
+                let href = url;
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    href = 'https://' + url;
+                }
+                return '<a href="' + href + '" target="_blank" rel="noopener noreferrer" style="color: #6366f1; text-decoration: underline; word-break: break-all;">' + url + '</a>';
+            });
+        }
+
         function sanitizeFirebasePath(str) {
             return str.replace(/[.#$[\]]/g, '_');
         }
@@ -2482,7 +2501,7 @@
             if (chatUserStatus) chatUserStatus.textContent = 'Offline';
             
             messagesContainer.innerHTML = '<div class="loading">Загрузка сообщений...</div>';
-            loadChatTheme();
+            loadChatTheme(chatId);
             
             if (!firebaseAvailable || !database) {
                 messagesContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Нет подключения к базе данных</p></div>';
@@ -2549,14 +2568,18 @@
                         
                         if (msg.type === 'image' && msg.imageData) {
                             content = '<img src="' + msg.imageData + '" style="max-width: 200px; border-radius: 8px;" onclick="this.requestFullscreen()">';
+                        } else if (msg.type === 'voice' && msg.audioData) {
+                            content = '<button onclick="playVoiceMessage(\'' + msg.audioData.replace(/'/g, "\\'") + '\', this)" style="padding: 10px 16px; background: rgba(255,255,255,0.15); border: none; color: white; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;"><i class="fas fa-play"></i> ' + (msg.duration ? Math.round(msg.duration) + 'с' : 'Голосовое') + '</button>';
                         } else {
-                            content = escapeHtml(msg.text || '');
+                            content = linkify(msg.text || '');
                         }
                         
                         let readIndicator = '';
                         if (isMe) {
                             if (msg.read === true) {
-                                readIndicator = '<div class="chat-message-read" style="font-size: 0.7rem; color: #6366f1; margin-top: 2px; text-align: right;">Прочитано</div>';
+                                readIndicator = '<div style="font-size: 0.75rem; color: #6366f1; text-align: right; margin-top: 2px; line-height: 1;"><i class="fas fa-check" style="font-size: 0.65rem; margin-right: -5px;"></i><i class="fas fa-check"></i></div>';
+                            } else {
+                                readIndicator = '<div style="font-size: 0.75rem; color: #64748b; text-align: right; margin-top: 2px; line-height: 1;"><i class="fas fa-check"></i></div>';
                             }
                         } else {
                             if (msg.read !== true) {
@@ -2602,6 +2625,10 @@
                 chatStatusListener.off();
                 chatStatusListener = null;
             }
+            if (chatThemeListener) {
+                chatThemeListener.off();
+                chatThemeListener = null;
+            }
             currentChatUser = null;
             navigateTo('profile');
         }
@@ -2614,7 +2641,7 @@
             document.getElementById('chatThemePicker').style.display = 'none';
         }
 
-        function applyChatTheme(type, value) {
+        function applyChatTheme(type, value, chatId) {
             const messagesContainer = document.getElementById('chatMessages');
             if (!messagesContainer) return;
             
@@ -2630,6 +2657,14 @@
             }
             
             saveChatTheme(type, value);
+            
+            if (chatId && firebaseAvailable && database) {
+                database.ref('chats/' + chatId + '/theme').set({
+                    type: type,
+                    value: value,
+                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                }).catch(e => console.error('Failed to sync theme:', e));
+            }
         }
 
         function saveChatTheme(type, value) {
@@ -2640,19 +2675,45 @@
             }
         }
 
-        function loadChatTheme() {
+        function loadChatTheme(chatId) {
             const messagesContainer = document.getElementById('chatMessages');
             if (!messagesContainer) return;
             
-            try {
-                const saved = localStorage.getItem('chatTheme');
-                if (saved) {
-                    const theme = JSON.parse(saved);
-                    applyChatTheme(theme.type, theme.value);
-                }
-            } catch (e) {
-                console.error('Failed to load chat theme:', e);
+            if (chatThemeListener) {
+                chatThemeListener.off();
+                chatThemeListener = null;
             }
+            
+            if (!chatId || !firebaseAvailable || !database) {
+                try {
+                    const saved = localStorage.getItem('chatTheme');
+                    if (saved) {
+                        const theme = JSON.parse(saved);
+                        applyChatTheme(theme.type, theme.value, chatId);
+                    }
+                } catch (e) {
+                    console.error('Failed to load chat theme:', e);
+                }
+                return;
+            }
+            
+            chatThemeListener = database.ref('chats/' + chatId + '/theme');
+            chatThemeListener.on('value', (snapshot) => {
+                const theme = snapshot.val();
+                if (theme && theme.type && theme.value) {
+                    applyChatTheme(theme.type, theme.value, chatId);
+                } else {
+                    try {
+                        const saved = localStorage.getItem('chatTheme');
+                        if (saved) {
+                            const localTheme = JSON.parse(saved);
+                            applyChatTheme(localTheme.type, localTheme.value, chatId);
+                        }
+                    } catch (e) {
+                        console.error('Failed to load local theme:', e);
+                    }
+                }
+            });
         }
 
         function resetChatTheme() {
@@ -2667,6 +2728,13 @@
             } catch (e) {
                 console.error('Failed to reset chat theme:', e);
             }
+            
+            if (currentChatUser && firebaseAvailable && database) {
+                database.ref('chats/' + getChatId(currentUser.username, currentChatUser) + '/theme').remove().catch(e => {
+                    console.error('Failed to reset theme in Firebase:', e);
+                });
+            }
+            
             closeChatThemePicker();
         }
 
@@ -2681,7 +2749,7 @@
             
             const reader = new FileReader();
             reader.onload = function(e) {
-                applyChatTheme('image', e.target.result);
+                applyChatTheme('image', e.target.result, getChatId(currentUser.username, currentChatUser));
                 closeChatThemePicker();
             };
             reader.readAsDataURL(file);
@@ -2737,6 +2805,111 @@
                 }
             };
             reader.readAsDataURL(file);
+        }
+
+        async function startVoiceRecording() {
+            if (!currentChatUser || !firebaseAvailable || !database) {
+                alert('Сначала выберите чат');
+                return;
+            }
+            
+            if (isRecording) return;
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = function(e) {
+                    if (e.data.size > 0) {
+                        audioChunks.push(e.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async function() {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    
+                    reader.onload = async function(e) {
+                        await sendVoiceMessage(e.target.result);
+                    };
+                    
+                    reader.readAsDataURL(audioBlob);
+                    
+                    stream.getTracks().forEach(track => track.stop());
+                    isRecording = false;
+                    const recordBtn = document.getElementById('voiceRecordBtn');
+                    if (recordBtn) {
+                        recordBtn.style.background = 'transparent';
+                        recordBtn.style.border = '1px solid rgba(255,255,255,0.2)';
+                        recordBtn.style.color = 'white';
+                    }
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                
+                const recordBtn = document.getElementById('voiceRecordBtn');
+                if (recordBtn) {
+                    recordBtn.style.background = 'rgba(239, 68, 68, 0.3)';
+                    recordBtn.style.border = '1px solid #ef4444';
+                    recordBtn.style.color = '#ef4444';
+                }
+            } catch (err) {
+                console.error('Ошибка доступа к микрофону:', err);
+                alert('Не удалось получить доступ к микрофону. Проверьте разрешения.');
+            }
+        }
+
+        function stopVoiceRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+
+        async function sendVoiceMessage(audioData) {
+            if (!audioData || !currentChatUser || !firebaseAvailable || !database) return;
+            
+            const chatId = getChatId(currentUser.username, currentChatUser);
+            
+            try {
+                await database.ref('chats/' + chatId + '/messages').push({
+                    author: currentUser.username,
+                    audioData: audioData,
+                    type: 'voice',
+                    timestamp: new Date().toISOString(),
+                    read: false
+                });
+            } catch (err) {
+                console.error('Ошибка отправки голосового сообщения:', err);
+                alert('Ошибка отправки голосового сообщения');
+            }
+        }
+
+        function playVoiceMessage(audioData, buttonElement) {
+            const audio = new Audio(audioData);
+            const originalContent = buttonElement.innerHTML;
+            
+            buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            buttonElement.disabled = true;
+            
+            audio.onloadeddata = function() {
+                buttonElement.innerHTML = '<i class="fas fa-volume-up"></i>';
+                audio.play();
+            };
+            
+            audio.onended = function() {
+                buttonElement.innerHTML = originalContent;
+                buttonElement.disabled = false;
+            };
+            
+            audio.onerror = function() {
+                buttonElement.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+                setTimeout(() => {
+                    buttonElement.innerHTML = originalContent;
+                    buttonElement.disabled = false;
+                }, 2000);
+            };
         }
 
         async function removeFromBlacklist(username) {
