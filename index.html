@@ -1132,16 +1132,6 @@
                         <p>Выйти из приложения</p>
                     </div>
                 </div>
-                
-                <div class="action-card" onclick="checkNotificationStatus()">
-                    <div class="action-icon" id="notificationStatusIcon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                        <i class="fas fa-bell"></i>
-                    </div>
-                    <div class="action-text">
-                        <h3 id="notificationStatusTitle">Уведомления</h3>
-                        <p id="notificationStatusText">Проверить статус</p>
-                    </div>
-                </div>
             </div>
             
             <input type="file" id="avatarUploadMobile" accept="image/*" style="display: none;" onchange="handleMobileAvatarUpload(event)">
@@ -1240,10 +1230,10 @@
                 <span>Назад</span>
             </button>
             <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-                <div id="chatUserAvatar" onclick="if(currentChatUser) viewUserProfile(currentChatUser)" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; overflow: hidden; cursor: pointer;" title="Открыть профиль">
+                <div id="chatUserAvatar" onclick="openChatUserProfile()" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; overflow: hidden; cursor: pointer;" title="Открыть профиль">
                 </div>
                 <div style="min-width: 0; flex: 1;">
-                    <div id="chatUserName" onclick="if(currentChatUser) viewUserProfile(currentChatUser)" style="color: white; font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="Открыть профиль">Чат</div>
+                    <div id="chatUserName" onclick="openChatUserProfile()" style="color: white; font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;" title="Открыть профиль">Чат</div>
                     <div id="chatUserStatus" style="font-size: 0.75rem; color: #94a3b8;">Offline</div>
                 </div>
             </div>
@@ -1382,9 +1372,6 @@
         let isRecording = false;
         let currentChatUser = null;
         let currentFriendsTab = 'friends';
-        let lastSeenMessageTime = {};
-        let notificationPermission = 'default';
-        let isViewingChat = null;
 
         function initFirebase() {
             if (firebaseAvailable && database) {
@@ -1669,15 +1656,7 @@
                 });
                 
                 setupMobilePresence(username);
-                requestNotificationPermission();
-                
-                const pendingChat = sessionStorage.getItem('pendingNotificationChat');
-                if (pendingChat) {
-                    sessionStorage.removeItem('pendingNotificationChat');
-                    setTimeout(() => openChat(pendingChat), 500);
-                } else {
-                    navigateTo('profile');
-                }
+                navigateTo('profile');
             } catch (err) {
                 console.error('Mobile auth error:', err);
                 errorDiv.textContent = 'Ошибка соединения. Проверьте интернет и попробуйте снова.';
@@ -1792,15 +1771,7 @@
                 sessionStorage.setItem('mobile_currentUser', JSON.stringify(newUser));
                 
                 setupMobilePresence(username);
-                requestNotificationPermission();
-                
-                const pendingChat = sessionStorage.getItem('pendingNotificationChat');
-                if (pendingChat) {
-                    sessionStorage.removeItem('pendingNotificationChat');
-                    setTimeout(() => openChat(pendingChat), 500);
-                } else {
-                    navigateTo('profile');
-                }
+                navigateTo('profile');
             } catch (err) {
                 console.error('Mobile register error:', err);
                 errorDiv.textContent = 'Ошибка создания аккаунта. Проверьте интернет и попробуйте снова.';
@@ -1834,26 +1805,6 @@
             if (adminBadge) adminBadge.style.display = isAdmin ? 'flex' : 'none';
             if (onlineIndicator) onlineIndicator.style.display = 'block';
             if (userStatus) userStatus.innerHTML = '<i class="fas fa-circle"></i> Онлайн';
-            
-            if ('Notification' in window) {
-                const icon = document.getElementById('notificationStatusIcon');
-                const title = document.getElementById('notificationStatusTitle');
-                const text = document.getElementById('notificationStatusText');
-                
-                if (Notification.permission === 'granted') {
-                    if (icon) icon.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                    if (title) title.textContent = 'Уведомления';
-                    if (text) text.textContent = 'Включены ✓';
-                } else if (Notification.permission === 'denied') {
-                    if (icon) icon.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-                    if (title) title.textContent = 'Уведомления';
-                    if (text) text.textContent = 'Заблокированы ✗';
-                } else {
-                    if (icon) icon.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-                    if (title) title.textContent = 'Уведомления';
-                    if (text) text.textContent = 'Не настроены';
-                }
-            }
             
             if (firebaseAvailable && database) {
                 if (commentsCountListener) {
@@ -2149,11 +2100,17 @@
                         ctx.drawImage(img, 0, 0, width, height);
                         
                         let dataUrl = canvas.toDataURL('image/jpeg', quality);
-                        if (dataUrl.length > 200000) {
-                            dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+                        let attempts = 0;
+                        
+                        while (dataUrl.length > 150000 && attempts < 3) {
+                            quality = quality * 0.6;
+                            dataUrl = canvas.toDataURL('image/jpeg', quality);
+                            attempts++;
                         }
+                        
                         if (dataUrl.length > 200000) {
-                            dataUrl = canvas.toDataURL('image/jpeg', 0.3);
+                            reject(new Error('Image too large even after compression'));
+                            return;
                         }
                         
                         resolve(dataUrl);
@@ -2906,12 +2863,6 @@
                     delete voiceMessageMap[key];
                 }
                 voiceMessageId = 0;
-                
-                if (currentChatUser && currentUser) {
-                    const chatId = getChatId(currentUser.username, currentChatUser);
-                    lastSeenMessageTime[chatId] = new Date().toISOString();
-                }
-                isViewingChat = null;
                 currentChatUser = null;
                 
                 const chatScreen = document.getElementById('chatScreen');
@@ -2943,7 +2894,6 @@
             } catch (e) {
                 console.error('Error closing chat:', e);
                 currentChatUser = null;
-                isViewingChat = null;
                 currentScreen = 'profile';
                 
                 const chatScreen = document.getElementById('chatScreen');
@@ -2966,6 +2916,19 @@
                 
                 window.location.hash = '#/profile';
             }
+        }
+
+        function openChatUserProfile() {
+            if (!currentChatUser) {
+                console.log('No current chat user');
+                return;
+            }
+            if (!currentUser) {
+                console.log('No current user logged in');
+                return;
+            }
+            console.log('Opening profile for chat user:', currentChatUser);
+            viewUserProfile(currentChatUser);
         }
 
         function openChatThemePicker() {
@@ -3130,6 +3093,13 @@
             
             try {
                 const compressedImage = await compressImage(file, 800, 0.7);
+                console.log('Image compressed, size:', compressedImage.length, 'chars');
+                
+                if (compressedImage.length > 200000) {
+                    alert('Изображение слишком большое даже после сжатия. Попробуйте другое изображение.');
+                    return;
+                }
+                
                 const chatId = getChatId(currentUser.username, currentChatUser);
                 
                 await database.ref('chats/' + chatId + '/messages').push({
@@ -3141,7 +3111,7 @@
                 });
             } catch (err) {
                 console.error('Ошибка отправки изображения:', err);
-                alert('Ошибка отправки изображения. Попробуйте другое изображение.');
+                alert('Ошибка отправки изображения: ' + err.message);
             }
         }
 
@@ -3800,7 +3770,7 @@
         document.addEventListener('DOMContentLoaded', init);
         
         if ('serviceWorker' in navigator) {
-            const swReg = navigator.serviceWorker.register('/service-worker.js?v=3').catch(() => {});
+            const swReg = navigator.serviceWorker.register('/service-worker.js?v=4').catch(() => {});
             
             let reloadTimeout;
             const scheduleReload = () => {

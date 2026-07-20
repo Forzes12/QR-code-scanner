@@ -1,4 +1,4 @@
-const CACHE_NAME = 'forzes-hub-v2';
+const CACHE_NAME = 'forzes-hub-v4';
 const urlsToCache = [
   '/',
   '/index.html',
