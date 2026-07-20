@@ -681,6 +681,26 @@
         .chat-messages.theme-image .chat-message.received {
             background: rgba(30, 41, 59, 0.9);
         }
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(-50%) translateY(-100%);
+                opacity: 0;
+            }
+        }
         .chat-input-area {
             position: fixed;
             bottom: 0;
@@ -1110,6 +1130,16 @@
                     <div class="action-text">
                         <h3>Выйти из аккаунта</h3>
                         <p>Выйти из приложения</p>
+                    </div>
+                </div>
+                
+                <div class="action-card" onclick="checkNotificationStatus()">
+                    <div class="action-icon" id="notificationStatusIcon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="action-text">
+                        <h3 id="notificationStatusTitle">Уведомления</h3>
+                        <p id="notificationStatusText">Проверить статус</p>
                     </div>
                 </div>
             </div>
@@ -1804,6 +1834,26 @@
             if (adminBadge) adminBadge.style.display = isAdmin ? 'flex' : 'none';
             if (onlineIndicator) onlineIndicator.style.display = 'block';
             if (userStatus) userStatus.innerHTML = '<i class="fas fa-circle"></i> Онлайн';
+            
+            if ('Notification' in window) {
+                const icon = document.getElementById('notificationStatusIcon');
+                const title = document.getElementById('notificationStatusTitle');
+                const text = document.getElementById('notificationStatusText');
+                
+                if (Notification.permission === 'granted') {
+                    if (icon) icon.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    if (title) title.textContent = 'Уведомления';
+                    if (text) text.textContent = 'Включены ✓';
+                } else if (Notification.permission === 'denied') {
+                    if (icon) icon.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                    if (title) title.textContent = 'Уведомления';
+                    if (text) text.textContent = 'Заблокированы ✗';
+                } else {
+                    if (icon) icon.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+                    if (title) title.textContent = 'Уведомления';
+                    if (text) text.textContent = 'Не настроены';
+                }
+            }
             
             if (firebaseAvailable && database) {
                 if (commentsCountListener) {
@@ -3157,48 +3207,170 @@
 
         function requestNotificationPermission() {
             if (!('Notification' in window)) {
+                console.log('Notification API not supported');
+                showInAppNotification('Система', 'Браузер не поддерживает уведомления', 'system');
                 return false;
             }
             notificationPermission = Notification.permission;
+            console.log('Notification permission:', notificationPermission);
+            
+            if (notificationPermission === 'denied') {
+                console.log('Notification permission denied');
+                showInAppNotification('Система', 'Уведомления заблокированы. Разрешите их в настройках браузера.', 'system');
+                return false;
+            }
+            
             if (notificationPermission === 'default') {
                 return Notification.requestPermission().then(permission => {
                     notificationPermission = permission;
+                    console.log('Notification permission after request:', permission);
+                    if (permission === 'granted') {
+                        showInAppNotification('Система', 'Уведомления включены', 'system');
+                    } else if (permission === 'denied') {
+                        showInAppNotification('Система', 'Уведомления заблокированы. Разрешите их в настройках браузера.', 'system');
+                    }
                     return permission === 'granted';
                 });
             }
+            
+            if (notificationPermission === 'granted') {
+                console.log('Notifications already granted');
+            }
+            
             return Promise.resolve(notificationPermission === 'granted');
         }
 
-        function showChatNotification(fromUser, messageText, chatId) {
-            if (!currentUser || fromUser === currentUser.username) return;
-            if (notificationPermission !== 'granted') return;
-            if (isViewingChat === chatId) return;
+        function showInAppNotification(fromUser, messageText, chatId) {
+            const existing = document.querySelector('.in-app-notification');
+            if (existing) {
+                existing.remove();
+            }
             
-            try {
-                const notification = new Notification('Новое сообщение от @' + fromUser, {
-                    body: messageText || 'Новое сообщение',
-                    icon: 'game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png',
-                    badge: 'game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png',
-                    tag: chatId,
-                    requireInteraction: false,
-                    silent: false
-                });
-                
-                notification.onclick = function() {
-                    window.focus();
-                    if (currentUser) {
-                        openChat(fromUser);
-                    } else {
-                        sessionStorage.setItem('pendingNotificationChat', fromUser);
-                    }
-                    notification.close();
-                };
-                
-                setTimeout(() => {
-                    notification.close();
-                }, 5000);
-            } catch (e) {
-                console.error('Failed to show notification:', e);
+            const notification = document.createElement('div');
+            notification.className = 'in-app-notification';
+            notification.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 16px 24px; border-radius: 16px; z-index: 9999; box-shadow: 0 10px 40px rgba(0,0,0,0.3); cursor: pointer; max-width: 90vw; display: flex; align-items: center; gap: 12px; animation: slideDown 0.3s ease-out;';
+            
+            const isSystem = chatId === 'system';
+            const title = isSystem ? '🔔 ' + fromUser : '💬 Новое сообщение';
+            const body = isSystem ? messageText : '@' + fromUser + ': ' + messageText;
+            
+            notification.innerHTML = '<div style="flex: 1; min-width: 0;"><div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 4px;">' + title + '</div><div style="font-size: 0.85rem; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + body + '</div></div>';
+            
+            notification.onclick = function() {
+                if (!isSystem && currentUser && fromUser !== 'Система') {
+                    openChat(fromUser);
+                }
+                notification.remove();
+            };
+            
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.animation = 'slideUp 0.3s ease-out';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, 300);
+                }
+            }, 4000);
+        }
+
+        function showChatNotification(fromUser, messageText, chatId) {
+            console.log('showChatNotification:', fromUser, messageText, chatId, 'currentUser:', !!currentUser, 'permission:', notificationPermission, 'viewing:', isViewingChat);
+            
+            if (!currentUser || fromUser === currentUser.username) {
+                console.log('Notification blocked: no currentUser or self-message');
+                return;
+            }
+            
+            const isGranted = notificationPermission === 'granted';
+            console.log('Notification granted:', isGranted);
+            
+            if (isViewingChat === chatId) {
+                console.log('Notification blocked: viewing this chat');
+                return;
+            }
+            
+            if (isGranted) {
+                try {
+                    const notification = new Notification('Новое сообщение от @' + fromUser, {
+                        body: messageText || 'Новое сообщение',
+                        icon: 'game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png',
+                        badge: 'game-screenshot/5558f6bc-dc26-4fa1-9cc4-8d39ac802dc0.png',
+                        tag: chatId,
+                        requireInteraction: false,
+                        silent: false
+                    });
+                    
+                    notification.onclick = function() {
+                        console.log('Notification clicked');
+                        window.focus();
+                        if (currentUser) {
+                            openChat(fromUser);
+                        } else {
+                            sessionStorage.setItem('pendingNotificationChat', fromUser);
+                        }
+                        notification.close();
+                    };
+                    
+                    notification.onerror = function(e) {
+                        console.error('Notification error:', e);
+                    };
+                    
+                    setTimeout(() => {
+                        notification.close();
+                    }, 5000);
+                    
+                    console.log('Notification shown successfully');
+                } catch (e) {
+                    console.error('Failed to show system notification:', e);
+                    showInAppNotification(fromUser, messageText, chatId);
+                }
+            } else {
+                console.log('Permission not granted, showing in-app notification');
+                showInAppNotification(fromUser, messageText, chatId);
+            }
+        }
+
+        async function checkNotificationStatus() {
+            const icon = document.getElementById('notificationStatusIcon');
+            const title = document.getElementById('notificationStatusTitle');
+            const text = document.getElementById('notificationStatusText');
+            
+            if (!('Notification' in window)) {
+                if (icon) icon.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                if (title) title.textContent = 'Уведомления';
+                if (text) text.textContent = 'Не поддерживаются браузером';
+                showInAppNotification('Система', 'Ваш браузер не поддерживает уведомления', 'system');
+                return;
+            }
+            
+            const permission = Notification.permission;
+            
+            if (permission === 'granted') {
+                if (icon) icon.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                if (title) title.textContent = 'Уведомления';
+                if (text) text.textContent = 'Включены ✓';
+                showInAppNotification('Система', 'Уведомления уже включены', 'system');
+            } else if (permission === 'denied') {
+                if (icon) icon.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                if (title) title.textContent = 'Уведомления';
+                if (text) text.textContent = 'Заблокированы ✗';
+                showInAppNotification('Система', 'Уведомления заблокированы. Разрешите их в настройках браузера.', 'system');
+            } else {
+                const granted = await requestNotificationPermission();
+                if (granted) {
+                    if (icon) icon.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    if (title) title.textContent = 'Уведомления';
+                    if (text) text.textContent = 'Включены ✓';
+                    showInAppNotification('Система', 'Уведомления включены!', 'system');
+                } else {
+                    if (icon) icon.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                    if (title) title.textContent = 'Уведомления';
+                    if (text) text.textContent = 'Отклонены ✗';
+                    showInAppNotification('Система', 'Вы отклонили уведомления', 'system');
+                }
             }
         }
 
