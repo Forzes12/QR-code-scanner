@@ -2122,6 +2122,54 @@
             });
         }
 
+        function compressImage(file, maxWidth = 800, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                if (!file.type.startsWith('image/')) {
+                    reject(new Error('Not an image file'));
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        if (width > maxWidth) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        if (dataUrl.length > 200000) {
+                            dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+                        }
+                        if (dataUrl.length > 200000) {
+                            dataUrl = canvas.toDataURL('image/jpeg', 0.3);
+                        }
+                        
+                        resolve(dataUrl);
+                    };
+                    img.onerror = function() {
+                        reject(new Error('Failed to load image'));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.onerror = function() {
+                    reject(new Error('Failed to read file'));
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
         function sanitizeFirebasePath(str) {
             return str.replace(/[.#$[\]]/g, '_');
         }
@@ -2720,10 +2768,6 @@
                                 '</div>' +
                             '</div>';
                             
-                            if (msgHtml.length > 5000) {
-                                return '<div class="chat-message ' + (isMe ? 'sent' : 'received') + '">Сообщение слишком длинное для отображения</div>';
-                            }
-                            
                             return msgHtml;
                         } catch (e) {
                             console.error('Error rendering message:', e, msg);
@@ -2838,32 +2882,90 @@
         }
 
         function closeChat() {
-            if (chatListener) {
-                chatListener.off();
-                chatListener = null;
+            console.log('closeChat called');
+            try {
+                if (chatListener) {
+                    chatListener.off();
+                    chatListener = null;
+                }
+                if (chatStatusListener) {
+                    chatStatusListener.off();
+                    chatStatusListener = null;
+                }
+                if (chatThemeListener) {
+                    chatThemeListener.off();
+                    chatThemeListener = null;
+                }
+                
+                const messagesContainer = document.getElementById('chatMessages');
+                if (messagesContainer && typeof handleChatContainerClick === 'function') {
+                    messagesContainer.removeEventListener('click', handleChatContainerClick);
+                }
+                
+                for (const key in voiceMessageMap) {
+                    delete voiceMessageMap[key];
+                }
+                voiceMessageId = 0;
+                
+                if (currentChatUser && currentUser) {
+                    const chatId = getChatId(currentUser.username, currentChatUser);
+                    lastSeenMessageTime[chatId] = new Date().toISOString();
+                }
+                isViewingChat = null;
+                currentChatUser = null;
+                
+                const chatScreen = document.getElementById('chatScreen');
+                const profileScreen = document.getElementById('profileScreen');
+                const navBar = document.getElementById('navBar');
+                
+                if (chatScreen) {
+                    chatScreen.classList.remove('active');
+                    chatScreen.style.display = 'none';
+                }
+                
+                if (profileScreen) {
+                    profileScreen.classList.add('active');
+                    profileScreen.style.display = '';
+                }
+                
+                if (navBar) {
+                    navBar.style.display = 'flex';
+                }
+                
+                currentScreen = 'profile';
+                window.location.hash = '#/profile';
+                
+                if (currentUser) {
+                    loadProfile();
+                }
+                
+                console.log('Chat closed successfully');
+            } catch (e) {
+                console.error('Error closing chat:', e);
+                currentChatUser = null;
+                isViewingChat = null;
+                currentScreen = 'profile';
+                
+                const chatScreen = document.getElementById('chatScreen');
+                const profileScreen = document.getElementById('profileScreen');
+                const navBar = document.getElementById('navBar');
+                
+                if (chatScreen) {
+                    chatScreen.classList.remove('active');
+                    chatScreen.style.display = 'none';
+                }
+                
+                if (profileScreen) {
+                    profileScreen.classList.add('active');
+                    profileScreen.style.display = '';
+                }
+                
+                if (navBar) {
+                    navBar.style.display = 'flex';
+                }
+                
+                window.location.hash = '#/profile';
             }
-            if (chatStatusListener) {
-                chatStatusListener.off();
-                chatStatusListener = null;
-            }
-            if (chatThemeListener) {
-                chatThemeListener.off();
-                chatThemeListener = null;
-            }
-            if (messagesContainer) {
-                messagesContainer.removeEventListener('click', handleChatContainerClick);
-            }
-            for (const key in voiceMessageMap) {
-                delete voiceMessageMap[key];
-            }
-            voiceMessageId = 0;
-            if (currentChatUser) {
-                const chatId = getChatId(currentUser.username, currentChatUser);
-                lastSeenMessageTime[chatId] = new Date().toISOString();
-            }
-            isViewingChat = null;
-            currentChatUser = null;
-            navigateTo('profile');
         }
 
         function openChatThemePicker() {
@@ -3021,29 +3123,26 @@
             const file = event.target.files[0];
             if (!file || !currentChatUser || !firebaseAvailable || !database) return;
             
-            if (file.size > 2 * 1024 * 1024) {
-                alert('Файл слишком большой! Максимальный размер 2MB');
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Файл слишком большой! Максимальный размер 10MB');
                 return;
             }
             
-            const reader = new FileReader();
-            reader.onload = async function(e) {
+            try {
+                const compressedImage = await compressImage(file, 800, 0.7);
                 const chatId = getChatId(currentUser.username, currentChatUser);
                 
-                try {
-                    await database.ref('chats/' + chatId + '/messages').push({
-                        author: currentUser.username,
-                        imageData: e.target.result,
-                        type: 'image',
-                        timestamp: new Date().toISOString(),
-                        read: false
-                    });
-                } catch (err) {
-                    console.error('Ошибка отправки изображения:', err);
-                    alert('Ошибка отправки изображения');
-                }
-            };
-            reader.readAsDataURL(file);
+                await database.ref('chats/' + chatId + '/messages').push({
+                    author: currentUser.username,
+                    imageData: compressedImage,
+                    type: 'image',
+                    timestamp: new Date().toISOString(),
+                    read: false
+                });
+            } catch (err) {
+                console.error('Ошибка отправки изображения:', err);
+                alert('Ошибка отправки изображения. Попробуйте другое изображение.');
+            }
         }
 
         async function startVoiceRecording() {
