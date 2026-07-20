@@ -2944,10 +2944,17 @@
         function openChatUserProfile() {
             if (!currentChatUser) {
                 console.log('No current chat user');
+                alert('Сначала откройте чат с пользователем');
                 return;
             }
             if (!currentUser) {
                 console.log('No current user logged in');
+                alert('Сначала войдите в аккаунт');
+                return;
+            }
+            if (currentChatUser.toLowerCase() === currentUser.username.toLowerCase()) {
+                console.log('Trying to open own profile from chat');
+                navigateTo('profile');
                 return;
             }
             console.log('Opening profile for chat user:', currentChatUser);
