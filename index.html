@@ -2156,8 +2156,13 @@
             results.innerHTML = '<div class="loading">Поиск...</div>';
             
             try {
-                const snapshot = await database.ref('users').once('value');
-                const users = snapshot.val() || {};
+                const [usersSnapshot, friendsSnapshot] = await Promise.all([
+                    database.ref('users').once('value'),
+                    database.ref('friends/' + currentUser.username.toLowerCase()).once('value')
+                ]);
+                
+                const users = usersSnapshot.val() || {};
+                const friends = friendsSnapshot.val() || {};
                 const matches = [];
                 
                 for (const [key, user] of Object.entries(users)) {
@@ -2180,6 +2185,24 @@
                     const statusText = isOnline ? 'Online' + (deviceLabel ? ' · ' + deviceLabel : '') : 'Offline';
                     const statusColor = isOnline ? '#10b981' : '#94a3b8';
                     const safeUsername = escapeHtml(user.username);
+                    const isFriend = friends[user.username.toLowerCase()] === 'accepted';
+                    
+                    let actionButtons = '<div style="display: flex; gap: 8px;">' +
+                        '<button class="btn-chat" onclick="event.stopPropagation(); openChat(\'' + safeUsername + '\')" style="padding: 8px 12px; border-radius: 10px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 0.85rem; font-weight: 700; cursor: pointer;">' +
+                            '<i class="fas fa-comment"></i>' +
+                        '</button>';
+                    
+                    if (isFriend) {
+                        actionButtons += '<button class="btn-chat" onclick="event.stopPropagation(); viewUserProfile(\'' + safeUsername + '\')" style="padding: 8px 12px; border-radius: 10px; border: none; background: linear-gradient(135deg, #10b981, #059669); color: white; font-size: 0.85rem; font-weight: 700; cursor: pointer;" title="Уже в друзьях">' +
+                            '<i class="fas fa-check"></i>' +
+                        '</button>';
+                    } else {
+                        actionButtons += '<button class="btn-accept" onclick="event.stopPropagation(); sendFriendRequest(\'' + safeUsername + '\')" style="padding: 8px 12px; border-radius: 10px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 0.85rem; font-weight: 700; cursor: pointer;">' +
+                            '<i class="fas fa-user-plus"></i>' +
+                        '</button>';
+                    }
+                    
+                    actionButtons += '</div>';
                     
                     return '<div class="user-card">' +
                         '<div class="user-card-avatar" onclick="viewUserProfile(\'' + safeUsername + '\')">' + avatarIcon + '</div>' +
@@ -2187,14 +2210,7 @@
                             '<div class="user-card-name">@' + safeUsername + '</div>' +
                             '<div class="user-card-status" style="color: ' + statusColor + ';">' + statusText + '</div>' +
                         '</div>' +
-                        '<div style="display: flex; gap: 8px;">' +
-                            '<button class="btn-chat" onclick="event.stopPropagation(); viewUserProfile(\'' + safeUsername + '\')" style="padding: 8px 12px; border-radius: 10px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-size: 0.85rem; font-weight: 700; cursor: pointer;">' +
-                                '<i class="fas fa-user"></i>' +
-                            '</button>' +
-                            '<button class="btn-accept" onclick="event.stopPropagation(); sendFriendRequest(\'' + safeUsername + '\')" style="padding: 8px 12px; border-radius: 10px; border: none; background: linear-gradient(135deg, #10b981, #059669); color: white; font-size: 0.85rem; font-weight: 700; cursor: pointer;">' +
-                                '<i class="fas fa-user-plus"></i>' +
-                            '</button>' +
-                        '</div>' +
+                        actionButtons +
                     '</div>';
                 }).join('');
             } catch (e) {
@@ -2211,6 +2227,12 @@
                 alert('Имя пользователя не указано');
                 return;
             }
+            
+            if (username.toLowerCase() === currentUser.username.toLowerCase()) {
+                navigateTo('profile');
+                return;
+            }
+            
             currentProfileUsername = username;
             
             console.log('Opening profile for:', username);
@@ -2222,8 +2244,9 @@
                 return;
             }
             
-            navigateTo('user-profile');
+            showScreen('user-profile');
             content.innerHTML = '<div class="loading">Загрузка профиля...</div>';
+            window.location.hash = '#/user-profile';
             
             if (!firebaseAvailable || !database) {
                 content.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Нет подключения к базе данных</p></div>';
