@@ -1331,6 +1331,7 @@
         /* ===== НЕОНОВЫЙ ПРЕМИУМ: свечение, градиенты, стекло ===== */
         /* Фон: многослойные неоновые переливы */
         .auth-screen {
+            z-index: 5000;
             background:
                 radial-gradient(130% 120% at 50% 0%, #1e1b4b 0%, #0f172a 48%, #080b1a 100%),
                 radial-gradient(55% 45% at 12% 18%, rgba(99,102,241,0.35), transparent 62%),
@@ -1462,6 +1463,16 @@
             -webkit-backdrop-filter: blur(8px);
             border-color: rgba(255,255,255,0.14);
         }
+
+        /* === Панель Forzes HUB: полностью неподвижная, без прокрутки === */
+        .auth-card {
+            overflow: hidden !important;
+            overscroll-behavior: none !important;
+            touch-action: none !important;
+            max-height: calc(100dvh - 24px) !important;
+            margin: auto !important;
+        }
+        /* === Конец блока неподвижной панели === */
         /* ===== Конец неонового блока ===== */
     </style>
 </head>
@@ -2023,6 +2034,28 @@
                 screenEl.classList.add('active');
             } else {
                 console.error('Screen not found:', screen + 'Screen');
+            }
+            
+            // Блокируем прокрутку всей страницы на экране входа/регистрации,
+            // чтобы нельзя было листать вверх-вниз во время авторизации
+            const body = document.body;
+            const html = document.documentElement;
+            if (screen === 'auth') {
+                body.style.overflow = 'hidden';
+                body.style.position = 'fixed';
+                body.style.width = '100%';
+                body.style.touchAction = 'none';
+                body.style.overscrollBehavior = 'none';
+                html.style.overflow = 'hidden';
+                html.style.overscrollBehavior = 'none';
+            } else {
+                body.style.overflow = '';
+                body.style.position = '';
+                body.style.width = '';
+                body.style.touchAction = '';
+                body.style.overscrollBehavior = '';
+                html.style.overflow = '';
+                html.style.overscrollBehavior = '';
             }
             
             const navBar = document.getElementById('navBar');
