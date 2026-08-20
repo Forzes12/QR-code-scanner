@@ -34,10 +34,11 @@
         
         .auth-screen {
             position: fixed;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            padding: 16px;
+            background: radial-gradient(130% 120% at 50% 0%, #1e1b4b 0%, #0f172a 48%, #080b1a 100%);
+            padding: 16px 16px 0;
+            padding-top: max(44px, calc(env(safe-area-inset-top) + 16px));
             overflow: hidden !important;
             overscroll-behavior: none;
             height: 100vh;
@@ -50,24 +51,137 @@
             right: 0;
             bottom: 0;
         }
+        /* Декоративные светящиеся ореолы на фоне */
+        .auth-screen::before,
+        .auth-screen::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(70px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .auth-screen::before {
+            width: 340px;
+            height: 340px;
+            top: -90px;
+            right: -120px;
+            background: radial-gradient(circle, rgba(99,102,241,0.5) 0%, transparent 70%);
+            animation: orbFloat 9s ease-in-out infinite alternate;
+        }
+        .auth-screen::after {
+            width: 320px;
+            height: 320px;
+            bottom: -120px;
+            left: -120px;
+            background: radial-gradient(circle, rgba(168,85,247,0.45) 0%, transparent 70%);
+            animation: orbFloat 12s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes orbFloat {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-34px, 26px) scale(1.18); }
+        }
+        .bg-grid {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background-image:
+                linear-gradient(rgba(148,163,184,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148,163,184,0.05) 1px, transparent 1px);
+            background-size: 42px 42px;
+            -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.9) 0%, transparent 78%);
+            mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.9) 0%, transparent 78%);
+            pointer-events: none;
+        }
         .auth-card {
-            background: rgba(30, 41, 59, 0.95);
-            border-radius: 20px;
-            padding: 24px 20px;
+            position: relative;
+            z-index: 1;
+            margin: auto;
+            background: linear-gradient(180deg, rgba(30,41,59,0.92) 0%, rgba(15,23,42,0.97) 100%);
+            border-radius: 24px;
+            padding: 28px 22px 22px;
             width: 100%;
             max-width: 360px;
-            max-height: 90vh;
+            max-height: 92vh;
+            max-height: calc(100dvh - 60px);
             overflow-y: auto;
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.09);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow:
+                0 24px 70px rgba(0,0,0,0.55),
+                0 0 44px rgba(99,102,241,0.12);
             overscroll-behavior: none;
+            animation: cardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+            scrollbar-width: none;
+        }
+        .auth-card::-webkit-scrollbar { display: none; }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(26px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        /* Акцентная полоска сверху карточки */
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 20px;
+            right: 20px;
+            height: 3px;
+            border-radius: 0 0 8px 8px;
+            background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+            transition: opacity 0.4s;
+        }
+        .auth-card.register-mode::before {
+            background: linear-gradient(90deg, #10b981, #059669, #34d399);
+        }
+        .auth-card .card-shine {
+            position: absolute;
+            top: -60%;
+            left: 0;
+            width: 55%;
+            height: 180%;
+            background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,0.055) 50%, transparent 58%);
+            transform: rotate(18deg);
+            pointer-events: none;
+            animation: shineMove 9s ease-in-out infinite;
+        }
+        @keyframes shineMove {
+            0%, 55% { left: -60%; }
+            100% { left: 130%; }
+        }
+        .auth-logo {
+            width: 68px;
+            height: 68px;
+            margin: 0 auto 14px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: white;
+            box-shadow: 0 12px 34px rgba(99,102,241,0.45);
+            position: relative;
+        }
+        .auth-logo::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 26px;
+            border: 1px solid rgba(139,92,246,0.35);
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+        @keyframes logoPulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
         }
         .auth-card h1 {
             text-align: center;
             margin-bottom: 6px;
-            font-size: 1.6rem;
-            background: linear-gradient(135deg, #6366f1, #a855f7);
+            font-size: 1.55rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #e0e7ff, #c4b5fd, #a78bfa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -75,35 +189,95 @@
         .auth-card .subtitle {
             text-align: center;
             color: #94a3b8;
-            margin-bottom: 20px;
+            margin-bottom: 14px;
             font-size: 0.9rem;
         }
-        .form-group { margin-bottom: 16px; }
+        .auth-card.register-mode .subtitle { color: #6ee7b7; }
+        /* Переключатель Вход / Регистрация */
+        .auth-tabs {
+            display: flex;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 16px;
+        }
+        .auth-tab {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 8px;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 11px;
+            cursor: pointer;
+            transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .auth-tab i { font-size: 0.95rem; }
+        .auth-tab.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            box-shadow: 0 5px 16px rgba(99,102,241,0.4);
+        }
+        .auth-card.register-mode .auth-tab.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 5px 16px rgba(16,185,129,0.4);
+        }
+        .auth-tab:not(.active):active { transform: scale(0.97); }
+
+        .form-group { margin-bottom: 13px; }
         .form-group label {
             display: block;
             color: #cbd5e1;
-            font-size: 0.85rem;
-            margin-bottom: 6px;
+            font-size: 0.82rem;
+            margin-bottom: 7px;
             font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .form-group label .hint {
+            color: #64748b;
+            font-weight: 400;
+            font-size: 0.75rem;
+            margin-left: 4px;
+        }
+        .input-wrapper { position: relative; }
+        .input-wrapper > i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 15px;
+            pointer-events: none;
+            transition: color 0.3s;
         }
         .form-group input {
             width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
+            padding: 13px 46px 13px 42px;
+            border-radius: 14px;
             border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(15,23,42,0.8);
+            background: rgba(15,23,42,0.72);
             color: white;
             font-size: 0.95rem;
+            font-family: inherit;
             outline: none;
             transition: all 0.3s;
-            min-height: 48px;
+            min-height: 50px;
             -webkit-text-fill-color: white;
         }
+        .form-group input::placeholder { color: #64748b; }
         .form-group input:-webkit-autofill,
         .form-group input:-webkit-autofill:hover,
         .form-group input:-webkit-autofill:focus {
             -webkit-text-fill-color: white;
-            -webkit-box-shadow: 0 0 0px 1000px rgba(15,23,42,0.8) inset;
+            -webkit-box-shadow: 0 0 0px 1000px rgba(15,23,42,0.86) inset;
             transition: background-color 5000s ease-in-out 0s;
         }
         input::-webkit-credentials-auto-fill-button,
@@ -112,40 +286,200 @@
         }
         .form-group input:focus {
             border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.22), 0 0 24px rgba(99,102,241,0.12);
         }
+        .input-wrapper:focus-within > i { color: #818cf8; }
+        .auth-card.register-mode .form-group input:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.22), 0 0 24px rgba(16,185,129,0.12);
+        }
+        .auth-card.register-mode .input-wrapper:focus-within > i { color: #34d399; }
+
+        /* === Компактный режим регистрации: форма помещается в экран, как блок входа === */
+        .auth-card.register-mode {
+            padding: 18px 20px 16px;
+        }
+        .auth-card.register-mode .auth-logo {
+            width: 46px;
+            height: 46px;
+            font-size: 20px;
+            margin-bottom: 10px;
+            border-radius: 15px;
+            box-shadow: 0 10px 26px rgba(16,185,129,0.35);
+        }
+        .auth-card.register-mode h1 {
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+        }
+        .auth-card.register-mode .subtitle {
+            margin-bottom: 10px;
+            font-size: 0.82rem;
+        }
+        .auth-card.register-mode .auth-tabs {
+            margin-bottom: 11px;
+        }
+        .auth-card.register-mode .auth-tab {
+            padding: 8px 6px;
+            font-size: 0.82rem;
+        }
+        .auth-card.register-mode .form-group {
+            margin-bottom: 8px;
+        }
+        .auth-card.register-mode .form-group label {
+            margin-bottom: 4px;
+            font-size: 0.76rem;
+        }
+        .auth-card.register-mode .form-group input {
+            min-height: 44px;
+            padding: 10px 42px 10px 38px;
+            font-size: 0.88rem;
+            border-radius: 12px;
+        }
+        .auth-card.register-mode .btn {
+            min-height: 48px;
+            padding: 12px;
+            font-size: 0.95rem;
+        }
+        .auth-card.register-mode .auth-switch {
+            padding: 9px;
+            margin-top: 10px;
+            font-size: 0.82rem;
+        }
+        .auth-card.register-mode .strength-text {
+            margin-top: 2px;
+            margin-bottom: 4px;
+        }
+        /* === Конец компактного режима регистрации === */
+
+        .toggle-password {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 10px;
+            font-size: 0.95rem;
+            border-radius: 10px;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .toggle-password:active { transform: translateY(-50%) scale(0.9); }
+        .auth-card:not(.register-mode) .toggle-password:hover { color: #a5b4fc; }
+        .auth-card.register-mode .toggle-password:hover { color: #34d399; }
+
+        .strength-block { margin-top: 6px; }
+        .strength-bar {
+            height: 5px;
+            border-radius: 99px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+        .strength-fill {
+            height: 100%;
+            width: 0;
+            border-radius: 99px;
+            transition: width 0.35s ease;
+        }
+        .strength-fill.weak { background: linear-gradient(90deg, #ef4444, #f87171); box-shadow: 0 0 10px rgba(239,68,68,0.6); }
+        .strength-fill.medium { background: linear-gradient(90deg, #f59e0b, #fbbf24); box-shadow: 0 0 10px rgba(245,158,11,0.6); }
+        .strength-fill.good { background: linear-gradient(90deg, #22c55e, #4ade80); box-shadow: 0 0 10px rgba(34,197,94,0.6); }
+        .strength-fill.strong { background: linear-gradient(90deg, #10b981, #34d399); box-shadow: 0 0 10px rgba(16,185,129,0.6); }
+        .strength-text {
+            margin-top: 6px;
+            font-size: 0.78rem;
+            color: #64748b;
+            min-height: 14px;
+            transition: color 0.3s;
+        }
+        .strength-text.weak { color: #ef4444; }
+        .strength-text.medium { color: #f59e0b; }
+        .strength-text.good { color: #22c55e; }
+        .strength-text.strong { color: #10b981; }
         .btn {
             width: 100%;
             padding: 14px;
-            border-radius: 12px;
+            border-radius: 14px;
             border: none;
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            min-height: 52px;
+            min-height: 54px;
             -webkit-tap-highlight-color: transparent;
+            font-family: inherit;
         }
-        .btn:active { transform: scale(0.97); opacity: 0.9; }
+        .btn:active { transform: scale(0.97); opacity: 0.92; }
         .btn-primary {
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+            box-shadow: 0 8px 24px rgba(99,102,241,0.35);
         }
+        .btn-primary:active { box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+        .btn-primary:disabled { opacity: 0.65; cursor: not-allowed; }
+        .auth-card.register-mode .btn-primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 8px 24px rgba(16,185,129,0.35);
+        }
+        .auth-card.register-mode .btn-primary:active { box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
         .error-msg {
-            color: #ef4444;
+            color: #fca5a5;
             font-size: 0.85rem;
             text-align: center;
             margin-top: 12px;
             display: none;
-            padding: 10px;
-            background: rgba(239, 68, 68, 0.1);
-            border-radius: 10px;
+            padding: 11px 12px;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            line-height: 1.5;
         }
+        .error-msg button {
+            background: rgba(239,68,68,0.2);
+            border: 1px solid rgba(239,68,68,0.4);
+            color: #fca5a5;
+            border-radius: 8px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .auth-switch {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 14px;
+            padding: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #cbd5e1;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-family: inherit;
+            font-weight: 600;
+            transition: all 0.25s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .auth-switch:hover {
+            color: white;
+            border-color: rgba(99,102,241,0.5);
+            background: rgba(99,102,241,0.12);
+        }
+        .auth-card.register-mode .auth-switch:hover {
+            border-color: rgba(16,185,129,0.5);
+            background: rgba(16,185,129,0.12);
+        }
+        .auth-switch:active { transform: scale(0.98); }
+        .auth-switch[hidden] { display: none; }
         
         .profile-screen { 
             padding: 0; 
@@ -628,8 +962,34 @@
         }
         .chat-message-time {
             font-size: 0.7rem;
-            opacity: 0.7;
+            opacity: 0.8;
+        }
+        .chat-message-meta {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 6px;
             margin-top: 4px;
+            font-size: 0.7rem;
+            line-height: 1;
+        }
+        .chat-message-meta.sent {
+            justify-content: flex-end;
+        }
+        .msg-status {
+            display: inline-flex;
+            align-items: center;
+            line-height: 1;
+        }
+        .chat-message-meta.sent .msg-status i {
+            font-size: 0.68rem;
+        }
+        .msg-status.unread {
+            color: rgba(255,255,255,0.55);
+        }
+        .msg-status.read {
+            color: #ffffff;
+            text-shadow: 0 0 8px rgba(255,255,255,0.45);
         }
         .chat-message-wrapper {
             position: relative;
@@ -967,6 +1327,142 @@
         }
         .nav-item.active { color: #6366f1; }
         .nav-item i { font-size: 22px; margin-bottom: 3px; }
+
+        /* ===== НЕОНОВЫЙ ПРЕМИУМ: свечение, градиенты, стекло ===== */
+        /* Фон: многослойные неоновые переливы */
+        .auth-screen {
+            background:
+                radial-gradient(130% 120% at 50% 0%, #1e1b4b 0%, #0f172a 48%, #080b1a 100%),
+                radial-gradient(55% 45% at 12% 18%, rgba(99,102,241,0.35), transparent 62%),
+                radial-gradient(50% 42% at 88% 12%, rgba(168,85,247,0.32), transparent 62%),
+                radial-gradient(60% 50% at 50% 100%, rgba(236,72,153,0.22), transparent 62%);
+        }
+        /* Убрано свечение в правом верхнем углу (::before) и левом нижнем углу (::after) */
+        .auth-screen::before {
+            display: none;
+        }
+        .auth-screen::after {
+            display: none;
+        }
+
+        /* Карточка: стекло (glassmorphism) + неоновый кант */
+        .auth-card {
+            background: linear-gradient(160deg, rgba(30,41,59,0.55) 0%, rgba(15,23,42,0.78) 100%);
+            backdrop-filter: blur(28px) saturate(170%);
+            -webkit-backdrop-filter: blur(28px) saturate(170%);
+            border: 1px solid rgba(255,255,255,0.16);
+            box-shadow:
+                0 30px 80px rgba(0,0,0,0.55),
+                inset 0 1px 0 rgba(255,255,255,0.12),
+                inset 0 0 60px rgba(99,102,241,0.06),
+                0 0 50px rgba(99,102,241,0.22),
+                0 0 130px rgba(168,85,247,0.16);
+        }
+        .auth-card::before {
+            left: 24px;
+            right: 24px;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+            box-shadow: 0 0 12px rgba(168,85,247,0.8);
+        }
+
+        /* Логотип: неоновый градиент и перелив */
+        .auth-logo {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+            background-size: 160% 160%;
+            box-shadow:
+                0 12px 34px rgba(99,102,241,0.55),
+                0 0 24px rgba(168,85,247,0.5),
+                0 0 60px rgba(236,72,153,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.35);
+            animation: neonHue 6s ease infinite;
+        }
+        .auth-logo::after {
+            border-color: rgba(236,72,153,0.5);
+            box-shadow: 0 0 18px rgba(236,72,153,0.5);
+        }
+        @keyframes neonHue {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Переключатель вкладок: стекло */
+        .auth-tabs {
+            background: rgba(255,255,255,0.045);
+            border: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .auth-tab.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 6px 18px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+        .auth-card.register-mode .auth-tab.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        /* Поля: стекло и неоновый фокус */
+        .form-group input {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .form-group input:focus {
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.25), 0 0 28px rgba(168,85,247,0.4);
+        }
+        .auth-card.register-mode .form-group input:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.22), 0 0 28px rgba(16,185,129,0.4);
+        }
+
+        /* Кнопка: неон + пробегающий блик */
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+            background-size: 180% 180%;
+            box-shadow:
+                0 8px 26px rgba(99,102,241,0.5),
+                0 0 30px rgba(168,85,247,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+            animation: neonHue 5s ease infinite;
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-card.register-mode .btn-primary {
+            background: linear-gradient(135deg, #10b981, #059669, #10b981);
+            background-size: 180% 180%;
+            box-shadow:
+                0 8px 26px rgba(16,185,129,0.5),
+                0 0 30px rgba(16,185,129,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+            animation: neonHue 5s ease infinite;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -130%;
+            width: 55%;
+            height: 100%;
+            background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+            transform: skewX(-20deg);
+            animation: btnShine 3.4s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes btnShine {
+            0% { left: -130%; }
+            55%, 100% { left: 175%; }
+        }
+
+        /* Кнопка переключения: стекло-неон */
+        .auth-switch {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-color: rgba(255,255,255,0.14);
+        }
+        /* ===== Конец неонового блока ===== */
     </style>
 </head>
 <body>
@@ -977,20 +1473,39 @@
     
     <!-- Auth Screen -->
     <div id="authScreen" class="screen auth-screen">
-        <div class="auth-card">
-            <h1><i class="fas fa-gamepad"></i> Forzes HUB</h1>
+        <div class="bg-grid"></div>
+        <div class="auth-card" id="authCard">
+            <div class="card-shine"></div>
+            <div class="auth-logo"><i class="fas fa-gamepad"></i></div>
+            <h1>Forzes HUB</h1>
             <p class="subtitle" id="authSubtitle">Вход в мобильное приложение</p>
             
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab active" id="authTabLogin" onclick="switchAuthMode('login')">
+                    <i class="fas fa-sign-in-alt"></i> Вход
+                </button>
+                <button type="button" class="auth-tab" id="authTabRegister" onclick="switchAuthMode('register')">
+                    <i class="fas fa-user-plus"></i> Регистрация
+                </button>
+            </div>
+
             <form id="mobileAuthForm" autocomplete="off" spellcheck="false" data-lpignore="true">
                 <input type="text" name="fakeusernameremembered" style="display: none;" tabindex="-1" autocomplete="off">
                 <input type="password" name="fakepasswordremembered" style="display: none;" tabindex="-1" autocomplete="off">
                 <div class="form-group">
                     <label>Имя пользователя</label>
-                    <input type="text" id="mobileUsername" name="username_field" placeholder="Введите имя пользователя" required autocomplete="off" autocapitalize="none" readonly onfocus="if(this.readOnly){this.readOnly=false;this.focus();}" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                    <div class="input-wrapper">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="mobileUsername" name="username_field" placeholder="Введите имя пользователя" required autocomplete="off" autocapitalize="none" readonly onfocus="if(this.readOnly){this.readOnly=false;this.focus();}" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Пароль</label>
-                    <input type="password" id="mobilePassword" name="password_field" placeholder="Введите пароль" required autocomplete="new-password" readonly onfocus="if(this.readOnly){this.readOnly=false;this.focus();}" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="mobilePassword" name="password_field" placeholder="Введите пароль" required autocomplete="new-password" readonly onfocus="if(this.readOnly){this.readOnly=false;this.focus();}" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('mobilePassword', this)" tabindex="-1" aria-label="Показать пароль"><i class="fas fa-eye"></i></button>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary" id="loginSubmitBtn">
                     <i class="fas fa-sign-in-alt"></i> Войти
@@ -1003,15 +1518,30 @@
                 <input type="password" name="fakepasswordremembered2" style="display: none;" tabindex="-1" autocomplete="off">
                 <div class="form-group">
                     <label>Имя пользователя</label>
-                    <input type="text" id="regUsername" name="reg_username_field" placeholder="Придумайте имя пользователя" required autocomplete="off" autocapitalize="none" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                    <div class="input-wrapper">
+                        <i class="fas fa-user-circle"></i>
+                        <input type="text" id="regUsername" name="reg_username_field" placeholder="Придумайте имя пользователя" required autocomplete="off" autocapitalize="none" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label>Пароль</label>
-                    <input type="password" id="regPassword" name="reg_password_field" placeholder="Придумайте пароль" required autocomplete="new-password" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                    <label>Пароль <span class="hint">(мин. 4 символа)</span></label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="regPassword" name="reg_password_field" placeholder="Придумайте пароль" required autocomplete="new-password" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('regPassword', this)" tabindex="-1" aria-label="Показать пароль"><i class="fas fa-eye"></i></button>
+                    </div>
+                    <div class="strength-block" id="strengthBlock" hidden>
+                        <div class="strength-bar"><div class="strength-fill" id="passwordStrengthFill"></div></div>
+                        <div class="strength-text" id="passwordStrengthText"></div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Повторите пароль</label>
-                    <input type="password" id="regPasswordConfirm" name="reg_password_confirm_field" placeholder="Повторите пароль" required autocomplete="new-password" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                    <div class="input-wrapper">
+                        <i class="fas fa-shield-halved"></i>
+                        <input type="password" id="regPasswordConfirm" name="reg_password_confirm_field" placeholder="Повторите пароль" required autocomplete="new-password" style="caret-color: white; touch-action: manipulation;" data-lpignore="true" data-form-type="other">
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('regPasswordConfirm', this)" tabindex="-1" aria-label="Показать пароль"><i class="fas fa-eye"></i></button>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary" id="registerSubmitBtn">
                     <i class="fas fa-user-plus"></i> Создать аккаунт
@@ -1019,11 +1549,11 @@
                 <div id="mobileRegisterError" class="error-msg"></div>
             </form>
 
-            <button type="button" id="showRegisterBtn" style="width: 100%; margin-top: 12px; padding: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; cursor: pointer; font-size: 0.9rem;">
-                Нет аккаунта? Зарегистрироваться
+            <button type="button" id="showRegisterBtn" class="auth-switch">
+                <i class="fas fa-user-plus"></i> Нет аккаунта? Зарегистрироваться
             </button>
-            <button type="button" id="showLoginBtn" style="width: 100%; margin-top: 12px; padding: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 12px; cursor: pointer; font-size: 0.9rem; display: none;">
-                Уже есть аккаунт? Войти
+            <button type="button" id="showLoginBtn" class="auth-switch" hidden>
+                <i class="fas fa-sign-in-alt"></i> Уже есть аккаунт? Войти
             </button>
         </div>
     </div>
@@ -1314,9 +1844,6 @@
             <div class="scanner-actions">
                 <button class="scanner-btn back" onclick="closeQRScanner()">
                     <i class="fas fa-arrow-left"></i> Назад
-                </button>
-                <button class="scanner-btn close" onclick="logoutMobile()">
-                    <i class="fas fa-sign-out-alt"></i> Выйти
                 </button>
             </div>
         </div>
@@ -1669,23 +2196,92 @@
             }
         });
 
-        document.getElementById('showRegisterBtn').addEventListener('click', () => {
-            document.getElementById('mobileAuthForm').style.display = 'none';
-            document.getElementById('mobileRegisterForm').style.display = 'block';
-            document.getElementById('showRegisterBtn').style.display = 'none';
-            document.getElementById('showLoginBtn').style.display = 'block';
-            document.getElementById('authSubtitle').textContent = 'Регистрация нового аккаунта';
-            document.getElementById('mobileAuthError').style.display = 'none';
-        });
+        function switchAuthMode(mode) {
+            const isRegister = mode === 'register';
+            const card = document.getElementById('authCard');
+            const loginForm = document.getElementById('mobileAuthForm');
+            const registerForm = document.getElementById('mobileRegisterForm');
+            const tabLogin = document.getElementById('authTabLogin');
+            const tabRegister = document.getElementById('authTabRegister');
+            const subtitle = document.getElementById('authSubtitle');
+            const showRegister = document.getElementById('showRegisterBtn');
+            const showLogin = document.getElementById('showLoginBtn');
+            const strengthBlock = document.getElementById('strengthBlock');
+            const strengthText = document.getElementById('passwordStrengthText');
 
-        document.getElementById('showLoginBtn').addEventListener('click', () => {
-            document.getElementById('mobileRegisterForm').style.display = 'none';
-            document.getElementById('mobileAuthForm').style.display = 'block';
-            document.getElementById('showLoginBtn').style.display = 'none';
-            document.getElementById('showRegisterBtn').style.display = 'block';
-            document.getElementById('authSubtitle').textContent = 'Вход в мобильное приложение';
+            if (isRegister) {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                showRegister.hidden = true;
+                showLogin.hidden = false;
+                subtitle.textContent = 'Присоединяйтесь к игровому сообществу';
+            } else {
+                registerForm.style.display = 'none';
+                loginForm.style.display = 'block';
+                showLogin.hidden = true;
+                showRegister.hidden = false;
+                subtitle.textContent = 'Вход в мобильное приложение';
+            }
+
+            tabLogin.classList.toggle('active', !isRegister);
+            tabRegister.classList.toggle('active', isRegister);
+            card.classList.toggle('register-mode', isRegister);
+            if (card) card.scrollTop = 0;
+
+            document.getElementById('mobileAuthError').style.display = 'none';
             document.getElementById('mobileRegisterError').style.display = 'none';
-        });
+            if (strengthBlock) strengthBlock.hidden = true;
+            if (strengthText) strengthText.textContent = '';
+        }
+
+        document.getElementById('showRegisterBtn').addEventListener('click', () => switchAuthMode('register'));
+        document.getElementById('showLoginBtn').addEventListener('click', () => switchAuthMode('login'));
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            if (btn) {
+                btn.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+            }
+        }
+
+        function updatePasswordStrength() {
+            const input = document.getElementById('regPassword');
+            const block = document.getElementById('strengthBlock');
+            const fill = document.getElementById('passwordStrengthFill');
+            const text = document.getElementById('passwordStrengthText');
+            if (!input || !block || !fill || !text) return;
+
+            const val = input.value;
+            if (!val) {
+                block.hidden = true;
+                text.textContent = '';
+                return;
+            }
+            block.hidden = false;
+
+            let score = 0;
+            if (val.length >= 4) score++;
+            if (val.length >= 8) score++;
+            if (/[A-Za-z]/.test(val) && /\d/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+            score = Math.max(1, Math.min(score, 4));
+
+            const levels = ['', 'weak', 'medium', 'good', 'strong'];
+            const labels = ['', 'Слабый', 'Средний', 'Хороший', 'Отличный'];
+
+            fill.className = 'strength-fill ' + levels[score];
+            fill.style.width = (score * 25) + '%';
+            text.className = 'strength-text ' + levels[score];
+            text.textContent = labels[score];
+        }
+
+        const regPasswordInput = document.getElementById('regPassword');
+        if (regPasswordInput) {
+            regPasswordInput.addEventListener('input', updatePasswordStrength);
+        }
 
         document.getElementById('mobileRegisterForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -2726,25 +3322,25 @@
                                 content = linkify(msg.text || '');
                             }
                             
-                            let readIndicator = '';
+                            if (!isMe && msg.read !== true) {
+                                unreadFromOther = true;
+                            }
+
+                            let statusIcon = '';
                             if (isMe) {
-                                if (msg.read === true) {
-                                    readIndicator = '<div style="font-size: 0.75rem; color: #6366f1; text-align: right; margin-top: 2px; line-height: 1;"><i class="fas fa-check" style="font-size: 0.65rem; margin-right: -5px;"></i><i class="fas fa-check"></i></div>';
-                                } else {
-                                    readIndicator = '<div style="font-size: 0.75rem; color: #64748b; text-align: right; margin-top: 2px; line-height: 1;"><i class="fas fa-check"></i></div>';
-                                }
-                            } else {
-                                if (msg.read !== true) {
-                                    unreadFromOther = true;
-                                }
+                                statusIcon = msg.read === true
+                                    ? '<span class="msg-status read" title="Прочитано"><i class="fas fa-check-double"></i></span>'
+                                    : '<span class="msg-status unread" title="Отправлено"><i class="fas fa-check"></i></span>';
                             }
                             
                             const msgHtml = '<div class="chat-message-wrapper ' + (isMe ? 'sent' : 'received') + '">' +
                                 '<button class="msg-delete-btn" data-message-key="' + key + '" data-chat-id="' + chatId + '"><i class="fas fa-trash"></i></button>' +
                                 '<div class="chat-message ' + (isMe ? 'sent' : 'received') + '">' +
                                     content +
-                                    '<div class="chat-message-time">' + time + '</div>' +
-                                    readIndicator +
+                                    '<div class="chat-message-meta' + (isMe ? ' sent' : '') + '">' +
+                                        '<span class="chat-message-time">' + time + '</span>' +
+                                        statusIcon +
+                                    '</div>' +
                                 '</div>' +
                             '</div>';
                             
