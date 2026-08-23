@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSCA — 3D персонажи для стримов</title>
+  <meta name="description" content="OSCA — стильные 3D аватары-персонажи для стримеров. Смотри в 3D, выбирай свой стиль.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@0;300;400;600;700;900&family=Inter:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+  <!-- ═══ NAV ═══ -->
+  <nav class="nav" id="nav">
+    <div class="nav-logo"><span class="logo-mark">◈</span><span class="logo-text">OSCA<span class="logo-dot">.</span></span></div>
+    <ul class="nav-links">
+      <li><a href="#studio">Персонажи</a></li>
+      <li><a href="#features">Фичи</a></li>
+      <li><a href="#price">Тарифы</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a href="#price" class="nav-cta">🛒 Купить</a>
+    <button class="nav-burger" aria-label="Меню" onclick="toggleMenu()"><span></span><span></span><span></span></button>
+  </nav>
+
+  <!-- ═══ HERO / 3D VIEWER ═══ -->
+  <header class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid-overlay"></div>
+
+    <div class="hero-copy">
+      <p class="hero-eyebrow">⚡ Персонажи-аватары для трансляций</p>
+      <h1 class="hero-title">Твой <span class="grad">3D аватар</span> для стримов</h1>
+      <p class="hero-sub">OSCA — набор уникальных 3D персонажей для общения со зрителями. Смотри их в 3D, крути модель, выбирай свой стиль и оживляй эфир.</p>
+      <div class="hero-actions">
+        <a href="#studio" class="btn-primary">🎮 Выбрать персонажа</a>
+        <a href="#features" class="btn-ghost">Узнать больше ↓</a>
+      </div>
+      <div class="hero-stats">
+        <div><b>12+</b><span>персонажей</span></div>
+        <div><b>4K</b><span>рендер</span></div>
+        <div><b>Live2D</b><span>анимация</span></div>
+        <div><b>RT</b><span>трекинг</span></div>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="viewer-info">
+        <span id="charName">NEON NEKO</span>
+      </div>
+      <div class="viewer-buttons">
+        <button onclick="resetCam()">🔄 Сброс</button>
+        <button onclick="toggleSpin()">🌀 Авто-вращение</button>
+        <button onclick="toggleParticles()">✨ Частицы</button>
+      </div>
+      <div id="stage-canvas"></div>
+      <div class="stage-loading" id="stageLoading"><div class="spinner"></div><p>Загрузка 3D модели…</p></div>
+    </div>
+  </header>
+
+  <!-- ═══ CHARACTER STUDIO ═══ -->
+  <section class="studio" id="studio">
+    <div class="section-head">
+      <p class="section-eyebrow">STUDIO / Галерея</p>
+      <h2>Выбери своего <span class="grad">OSCA</span></h2>
+      <p>Кликни на персонажа — модель появится в 3D-просмотрщике сверху. Каждый персонаж уникален по стилю и материалам.</p>
+    </div>
+    <div class="char-grid" id="charGrid"><!-- JS --></div>
+  </section>
+
+  <!-- ═══ FEATURES ═══ -->
+  <section class="features" id="features">
+    <div class="section-head">
+      <p class="section-eyebrow">POWER / Возможности</p>
+      <h2>Всё для <span class="grad">крутых стримов</span></h2>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card"><div class="feat-icon">🕹</div><h3>Трекинг лица</h3><p>Персонаж повторяет мимику и движения головы через веб-камеру в реальном времени.</p></div>
+      <div class="feat-card"><div class="feat-icon">🧊</div><h3>3D модель</h3><p>Полигональная модель с материалами, светом и анимацией. Можно крутить и зумить прямо на сайте.</p></div>
+      <div class="feat-card"><div class="feat-icon">🎨</div><h3>Свой стиль</h3><p>Смена цвета неона, подложки и деталей — адаптируй OSCA под бренд стрима.</p></div>
+      <div class="feat-card"><div class="feat-icon">🖌</div><h3>Бонус-сеты</h3><p>Эмоут, оверлеи, панели донатов и баннеры в комплекте с каждым персонажем.</p></div>
+      <div class="feat-card"><div class="feat-icon">✍️</div><h3>Персональный OSCA</h3><p>Сделай аватара с нуля по своим референсам + нейтральный результат для твоего эфира.</p></div>
+      <div class="feat-card"><div class="feat-icon">🔒</div><h3>Лицензия</h3><p>Персональная коммерческая лицензия — используй без ограничений у себя.</p></div>
+    </div>
+  </section>
+
+  <!-- ═══ PRICING ═══ -->
+  <section class="price" id="price">
+    <div class="section-head">
+      <p class="section-eyebrow">TARIFS / Тарифы</p>
+      <h2>Цены для <span class="grad">стримеров</span></h2>
+    </div>
+    <div class="price-grid">
+      <div class="price-card">
+        <div class="price-badge">Старт</div>
+        <h3>Один персонаж</h3>
+        <div class="price-value">$45</div>
+        <ul><li>Готовая 3D модель</li><li>Live2D анимация</li><li>Базовый бэксп-сет</li><li>Лицензия</li></ul>
+        <a href="#" class="btn-primary">Выбрать</a>
+      </div>
+      <div class="price-card popular">
+        <div class="price-badge">🔥 Хит</div>
+        <h3>Пак «Трио»</h3>
+        <div class="price-value">$110</div>
+        <ul><li>3 персонажа на выбор</li><li>Все эмоции и оверлеи</li><li>Смена цветов</li><li>Приоритетная поддержка</li></ul>
+        <a href="#" class="btn-primary">Выбрать</a>
+      </div>
+      <div class="price-card">
+        <div class="price-badge">Pro</div>
+        <h3>Кастом OSCA</h3>
+        <div class="price-value">от $250</div>
+        <ul><li>Уникальная модель с нуля</li><li>Полный пакет брендинга</li><li>Эмоции + SFX</li><li>3D исходник + Live2D</li></ul>
+        <a href="#" class="btn-primary">Выбрать</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FAQ ═══ -->
+  <section class="faq" id="faq">
+    <div class="section-head">
+      <p class="section-eyebrow">FAQ</p>
+      <h2>Частые <span class="grad">вопросы</span></h2>
+    </div>
+    <div class="faq-list" id="faqList">
+      <div class="faq-item open"><h3>Как работает 3D-просмотрщик?<span>＋/−</span></h3><p>Модель рисуется на лету в браузере через WebGL (Three.js). Разверни мышкой, увеличь колесом, переключи персонажа в галерее под ним.</p></div>
+      <div class="faq-item"><h3>Что такое «оска»?<span>＋/−</span></h3><p>Это 3D-персонаж-аватар стримера, который повторяет твои движения и эмоции в эфире. Разные виды и стили — от неона до фэнтэзи.</p></div>
+      <div class="faq-item"><h3>Нужно ли уметь работать с 2D-программами?<span>＋/−</span></h3><p>Нет. Все модели уже настроенные, установи и запускай в своей стрим-студии. Инструкция в комплекте.</p></div>
+      <div class="faq-item"><h3>Можно ли менять цвет и вид?<span>＋/−</span></h3><p>Да! В пакете «Трио» есть пресеты цветов, а в кастом-заказе меняем всё под твой бренд.</p></div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA ═══ -->
+  <section class="cta">
+    <div class="cta-glow"></div>
+    <h2>Запусти своего <span class="grad">OSCA</span> в хайп</h2>
+    <p>Собери аудиторию вокруг уникального 3D-образа. Напиши нам — подберём модель под твой вайб.</p>
+    <a href="#" class="btn-primary big">🎰 Заказать OSCA</a>
+  </section>
+
+  <footer>
+    <div class="footer-logo"><span class="logo-mark">◈</span> OSCA<span class="logo-dot">.</span></div>
+    <p>© 2026 OSCA Studio. 3D-персонажи для стримеров. Сделано с любовью и неоном ⚡</p>
+    <div class="footer-links"><a href="#studio">Персонажи</a><a href="#price">Тарифы</a><a href="#faq">FAQ</a></div>
+  </footer>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="assets/js/characters.js"></script>
+  <script src="assets/js/viewer.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
