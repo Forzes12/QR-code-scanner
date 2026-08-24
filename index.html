@@ -1911,6 +1911,33 @@
         let currentChatUser = null;
         let currentFriendsTab = 'friends';
 
+        // Сессия сохраняется сразу в оба хранилища:
+        // sessionStorage на мобильных может очищаться при обновлении страницы,
+        // localStorage используется как надёжная резервная копия
+        function persistSession(user) {
+            try { sessionStorage.setItem('mobile_currentUser', JSON.stringify(user)); } catch (e) {}
+            try { localStorage.setItem('mobile_currentUser', JSON.stringify(user)); } catch (e) {}
+        }
+
+        // Синхронизирует кэш аватарки с текущим состоянием пользователя,
+        // чтобы после обновления страницы не появлялась старая аватарка
+        function saveAvatarCache(avatar, avatarData) {
+            try {
+                if (avatar === 'custom' && avatarData) {
+                    localStorage.setItem('mobile_userAvatar', 'custom');
+                    localStorage.setItem('mobile_avatarData', avatarData);
+                } else if (avatar) {
+                    localStorage.setItem('mobile_userAvatar', avatar);
+                    localStorage.removeItem('mobile_avatarData');
+                }
+            } catch (e) {}
+        }
+
+        function clearSession() {
+            try { sessionStorage.removeItem('mobile_currentUser'); } catch (e) {}
+            try { localStorage.removeItem('mobile_currentUser'); } catch (e) {}
+        }
+
         function initFirebase() {
             if (firebaseAvailable && database) {
                 console.log('Firebase already available');
@@ -2209,7 +2236,8 @@
                 currentUser = user;
                 localStorage.setItem('mobile_username', username);
                 localStorage.setItem('mobile_password', password);
-                sessionStorage.setItem('mobile_currentUser', JSON.stringify(user));
+                saveAvatarCache(user.avatar, user.avatarData);
+                persistSession(user);
                 
                 await database.ref('users/' + username.toLowerCase()).update({
                     lastLogin: firebase.database.ServerValue.TIMESTAMP
@@ -2397,7 +2425,8 @@
                 currentUser = newUser;
                 localStorage.setItem('mobile_username', username);
                 localStorage.setItem('mobile_password', password);
-                sessionStorage.setItem('mobile_currentUser', JSON.stringify(newUser));
+                saveAvatarCache(newUser.avatar, newUser.avatarData);
+                persistSession(newUser);
                 
                 setupMobilePresence(username);
                 navigateTo('profile');
@@ -2494,10 +2523,8 @@
                     
                     currentUser.avatar = 'custom';
                     currentUser.avatarData = compressedData;
-                    localStorage.setItem('mobile_avatarData', compressedData);
-                    localStorage.setItem('mobile_userAvatar', 'custom');
-                    localStorage.removeItem('mobile_avatarType');
-                    sessionStorage.setItem('mobile_currentUser', JSON.stringify(currentUser));
+                    saveAvatarCache(currentUser.avatar, currentUser.avatarData);
+                    persistSession(currentUser);
                     
                     syncMobileProfileToFirebase();
                 };
@@ -4332,7 +4359,9 @@
             
             localStorage.removeItem('mobile_username');
             localStorage.removeItem('mobile_password');
-            sessionStorage.removeItem('mobile_currentUser');
+            clearSession();
+            localStorage.removeItem('mobile_avatarData');
+            localStorage.removeItem('mobile_userAvatar');
             currentUser = null;
             stopQRScanner();
             
@@ -4346,6 +4375,45 @@
             
             const navBar = document.getElementById('navBar');
             navBar.style.display = 'none';
+        }
+
+        // Автоматический вход по сохранённым учётным данным,
+        // если сессия потерялась после обновления страницы
+        async function autoLogin(username, password) {
+            try {
+                const snapshot = await database.ref('users/' + username.toLowerCase()).once('value');
+                const user = snapshot.val();
+                if (!user || (user.password && user.password !== password)) return;
+
+                currentUser = user;
+                saveAvatarCache(user.avatar, user.avatarData);
+                persistSession(user);
+                setupMobilePresence(username);
+                requestNotificationPermission();
+                handleRoute();
+            } catch (e) {
+                console.error('Auto login error:', e);
+            }
+        }
+
+        // Обновляет данные пользователя из базы (аватарка, статистика),
+        // чтобы изменения с других устройств сразу отображались
+        async function refreshCurrentUserFromDB() {
+            if (!currentUser || !firebaseAvailable || !database) return;
+            try {
+                const snapshot = await database.ref('users/' + currentUser.username.toLowerCase()).once('value');
+                const fresh = snapshot.val();
+                if (fresh && currentUser) {
+                    currentUser = Object.assign({}, currentUser, fresh);
+                    saveAvatarCache(currentUser.avatar, currentUser.avatarData);
+                    persistSession(currentUser);
+                    if (currentScreen === 'profile') {
+                        loadProfile();
+                    }
+                }
+            } catch (e) {
+                console.error('Refresh user data error:', e);
+            }
         }
 
         // Init
@@ -4371,22 +4439,25 @@
                 document.getElementById('mobilePassword').value = savedPassword;
             }
             
-            const savedUser = sessionStorage.getItem('mobile_currentUser');
+            const savedUser = sessionStorage.getItem('mobile_currentUser') || localStorage.getItem('mobile_currentUser');
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
                     
+                    // Кэш аватарки применяем только если в сохранённой сессии аватарка не задана,
+                    // иначе устаревший кэш перезапишет актуальную аватарку
                     const savedAvatarData = localStorage.getItem('mobile_avatarData');
                     const savedAvatarType = localStorage.getItem('mobile_userAvatar');
-                    if (savedAvatarData && savedAvatarType === 'custom') {
+                    if ((!currentUser.avatar || currentUser.avatar === 'default') && savedAvatarData && savedAvatarType === 'custom') {
                         currentUser.avatar = 'custom';
                         currentUser.avatarData = savedAvatarData;
-                    } else if (savedAvatarType && savedAvatarType !== 'custom') {
+                    } else if ((!currentUser.avatar || currentUser.avatar === 'default') && savedAvatarType && savedAvatarType !== 'custom') {
                         currentUser.avatar = savedAvatarType;
                         currentUser.avatarData = null;
                     }
                 } catch (e) {
                     currentUser = null;
+                    clearSession();
                 }
             }
             
@@ -4401,6 +4472,17 @@
             
             if (currentUser) {
                 requestNotificationPermission();
+                setupMobilePresence(currentUser.username);
+                // Подтягиваем свежие данные (аватарка, статистика) из базы
+                refreshCurrentUserFromDB();
+            } else if (savedUsername && savedPassword) {
+                // Сессия потерялась (например, после обновления страницы) —
+                // тихо входим по сохранённым учётным данным
+                waitForFirebase(8000).then(ok => {
+                    if (ok && !currentUser) {
+                        autoLogin(savedUsername, savedPassword);
+                    }
+                });
             }
             
             handleRoute();
@@ -4429,7 +4511,7 @@
         document.addEventListener('DOMContentLoaded', init);
         
         if ('serviceWorker' in navigator) {
-            const swReg = navigator.serviceWorker.register('/service-worker.js?v=4').catch(() => {});
+            const swReg = navigator.serviceWorker.register('/service-worker.js?v=5').catch(() => {});
             
             let reloadTimeout;
             const scheduleReload = () => {

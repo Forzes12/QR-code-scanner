@@ -1,4 +1,4 @@
-const CACHE_NAME = 'forzes-hub-v5';
+const CACHE_NAME = 'forzes-hub-v6';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -28,24 +28,47 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const request = event.request;
+
+  // HTML-страницы всегда запрашиваем из сети первыми,
+  // чтобы пользователи сразу получали обновлённую версию приложения.
+  // Кэш используется только как резерв при отсутствии интернета.
+  if (request.mode === 'navigate' ||
+      (request.method === 'GET' && (request.headers.get('accept') || '').includes('text/html'))) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put('/index.html', responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request)
+    caches.match(request)
       .then((response) => {
         if (response) {
           return response;
         }
-        return fetch(event.request).then((response) => {
+        return fetch(request).then((response) => {
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
+            cache.put(request, responseToCache);
           });
           return response;
         });
       }).catch(() => {
         return caches.match('/index.html');
-      });
-  });
+      })
+  );
 });
