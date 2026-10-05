@@ -1159,7 +1159,9 @@
             left: 0;
             right: 0;
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
-            padding: 20px;
+            /* Кнопка «Назад» — как можно выше, но не под вырезом экрана */
+            padding: 12px 14px;
+            padding-top: max(12px, env(safe-area-inset-top));
             display: flex;
             align-items: center;
             gap: 18px;
@@ -1202,6 +1204,27 @@
             max-width: none !important;
             max-height: none !important;
             object-fit: cover !important;
+        }
+        /* Рамка сканирования — крупный квадрат чуть выше центра (как в Telegram) */
+        #scanZone {
+            position: absolute;
+            top: 44%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(86vw, 400px);
+            height: min(86vw, 400px);
+            border: 4px solid rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+            overflow: hidden;
+        }
+        /* На невысоких экранах рамка не должна упираться в нижнюю панель */
+        @media (max-height: 660px) {
+            #scanZone {
+                width: min(76vw, 330px);
+                height: min(76vw, 330px);
+                top: 43%;
+            }
         }
         @keyframes scanPulse {
             0%, 100% { opacity: 0.4; }
@@ -1260,7 +1283,9 @@
             left: 0;
             right: 0;
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
-            padding: 24px;
+            /* Поднимаем кнопку «Назад» выше адресной строки и жестовой панели браузера */
+            padding: 20px 24px;
+            padding-bottom: max(64px, calc(env(safe-area-inset-bottom) + 40px));
             border-top: 1px solid rgba(255,255,255,0.1);
             z-index: 10;
         }
@@ -1850,7 +1875,7 @@
             <div id="qrReader" style="width: 100%; height: 100%; max-width: none; max-height: none; border-radius: 0; margin-bottom: 0;"></div>
             <div id="scanOverlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 5;">
                 <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55);"></div>
-                <div id="scanZone" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(340px, 78vw); height: min(340px, 78vw); border: 3px solid rgba(255,255,255,0.9); border-radius: 20px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.55); overflow: hidden;">
+                <div id="scanZone">
                     <div class="scan-success-overlay"></div>
                 </div>
             </div>
