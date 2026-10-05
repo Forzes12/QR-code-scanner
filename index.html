@@ -1267,14 +1267,51 @@
         }
         /* Рамка следует за обнаруженным QR-кодом — как в Telegram */
         #scanZone.tracking {
-            animation: none;
+            animation: trackPulse 1.1s ease-in-out infinite;
             border-color: rgba(99, 102, 241, 0.95);
             box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 36px 6px rgba(99, 102, 241, 0.65);
         }
         /* Найден именно код входа — рамка подсвечивается зелёным */
         #scanZone.tracking.lock {
+            animation: trackPulseLock 1.1s ease-in-out infinite;
             border-color: rgba(16, 185, 129, 0.95);
             box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 40px 8px rgba(16, 185, 129, 0.7);
+        }
+        @keyframes trackPulse {
+            0%, 100% { border-color: rgba(99, 102, 241, 0.85); box-shadow: 0 0 0 9999px rgba(0,0,0,0.55), 0 0 26px 4px rgba(99, 102, 241, 0.5); }
+            50% { border-color: rgba(129, 140, 248, 1); box-shadow: 0 0 0 9999px rgba(0,0,0,0.55), 0 0 50px 10px rgba(99, 102, 241, 0.85); }
+        }
+        @keyframes trackPulseLock {
+            0%, 100% { border-color: rgba(16, 185, 129, 0.85); box-shadow: 0 0 0 9999px rgba(0,0,0,0.55), 0 0 28px 5px rgba(16, 185, 129, 0.55); }
+            50% { border-color: rgba(52, 211, 153, 1); box-shadow: 0 0 0 9999px rgba(0,0,0,0.55), 0 0 55px 12px rgba(16, 185, 129, 0.9); }
+        }
+        /* Анимация сканирования: луч идёт сверху вниз внутри рамки */
+        #scanZone .scan-beam {
+            position: absolute;
+            left: 8%;
+            right: 8%;
+            top: 6%;
+            height: 3px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(129, 140, 248, 0), rgba(129, 140, 248, 0.95), rgba(129, 140, 248, 0));
+            box-shadow: 0 0 12px 2px rgba(99, 102, 241, 0.6);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9;
+        }
+        #scanZone.scanning .scan-beam,
+        #scanZone.tracking .scan-beam {
+            animation: beamSweep 1.5s ease-in-out infinite;
+        }
+        #scanZone.tracking.lock .scan-beam {
+            background: linear-gradient(90deg, rgba(52, 211, 153, 0), rgba(52, 211, 153, 0.95), rgba(52, 211, 153, 0));
+            box-shadow: 0 0 12px 2px rgba(16, 185, 129, 0.65);
+        }
+        @keyframes beamSweep {
+            0% { top: 6%; opacity: 0; }
+            15% { opacity: 1; }
+            85% { opacity: 1; }
+            100% { top: calc(100% - 9px); opacity: 0; }
         }
         #scanZone.success .scan-success-overlay {
             opacity: 1;
@@ -1888,6 +1925,7 @@
             <div id="scanOverlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 5;">
                 <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55);"></div>
                 <div id="scanZone">
+                    <div class="scan-beam"></div>
                     <div class="scan-success-overlay"></div>
                 </div>
             </div>
@@ -4257,7 +4295,9 @@
             lastSeen: 0,
             busy: false,
             lastDetect: 0,
-            frames: 0
+            frames: 0,
+            base: null,      // базовый (домашний) размер рамки, px
+            size: null       // сглаженный размер {w, h} — рамка «зажимается» под код
         };
         var lastQRVibe = 0;
 
@@ -4270,6 +4310,8 @@
             qrTrack.busy = false;
             qrTrack.lastDetect = 0;
             qrTrack.frames = 0;
+            qrTrack.base = null;
+            qrTrack.size = null;
             if (!qrTrack.canvas) {
                 qrTrack.canvas = document.createElement('canvas');
                 qrTrack.ctx = qrTrack.canvas.getContext('2d', { willReadFrequently: true });
@@ -4375,31 +4417,49 @@
             return rect;
         }
 
-        // Плавная анимация: рамка едет за кодом и возвращается домой при потере
+        // Плавная анимация: рамка едет за кодом, «зажимается» под его размер
+        // и возвращается домой при потере цели
         function qrTrackAnimate(zone, overlay, now) {
             if (zone.classList.contains('success')) return; // финальная анимация — не мешаем
             var cw = overlay.clientWidth;
             var ch = overlay.clientHeight;
-            var w = zone.offsetWidth;
-            var h = zone.offsetHeight;
-            if (!w || !h) return;
+            // Базовый (домашний) размер рамки запоминается один раз — до inline-правок
+            if (!qrTrack.base) {
+                var bw = zone.offsetWidth;
+                var bh = zone.offsetHeight;
+                if (bw && bh) qrTrack.base = { w: bw, h: bh };
+            }
+            var base = qrTrack.base;
+            if (!base) return;
 
             if (qrTrack.target && now - qrTrack.lastSeen > 350) qrTrack.target = null;
             var dest;
+            var destW = base.w;
+            var destH = base.h;
             if (qrTrack.target) {
                 dest = {
                     x: qrTrack.target.x + qrTrack.target.w / 2,
                     y: qrTrack.target.y + qrTrack.target.h / 2
                 };
+                // Зона уменьшается и «зажимает» код: rect уже включает pad 8px с каждой стороны
+                destW = Math.min(base.w, Math.max(qrTrack.target.w + 8, 120));
+                destH = Math.min(base.h, Math.max(qrTrack.target.h + 8, 120));
             } else {
                 // Домашняя позиция — как в CSS: по центру и 44% высоты (43% на низких экранах)
                 dest = { x: cw / 2, y: ch * (window.innerHeight <= 660 ? 0.43 : 0.44) };
             }
             if (!qrTrack.current) qrTrack.current = { x: dest.x, y: dest.y };
+            if (!qrTrack.size) qrTrack.size = { w: base.w, h: base.h };
             var k = qrTrack.target ? 0.22 : 0.1;
             qrTrack.current.x += (dest.x - qrTrack.current.x) * k;
             qrTrack.current.y += (dest.y - qrTrack.current.y) * k;
+            qrTrack.size.w += (destW - qrTrack.size.w) * k;
+            qrTrack.size.h += (destH - qrTrack.size.h) * k;
 
+            zone.style.width = qrTrack.size.w.toFixed(1) + 'px';
+            zone.style.height = qrTrack.size.h.toFixed(1) + 'px';
+            var w = zone.offsetWidth;
+            var h = zone.offsetHeight;
             var cx = cw >= w ? Math.min(Math.max(qrTrack.current.x, w / 2), cw - w / 2) : cw / 2;
             var cy = ch >= h ? Math.min(Math.max(qrTrack.current.y, h / 2), ch - h / 2) : ch / 2;
             zone.style.left = '0';
@@ -4426,12 +4486,16 @@
             }
             qrTrack.target = null;
             qrTrack.current = null;
+            qrTrack.base = null;
+            qrTrack.size = null;
             var zone = document.getElementById('scanZone');
             if (zone) {
                 zone.classList.remove('tracking', 'lock');
                 zone.style.left = '';
                 zone.style.top = '';
                 zone.style.transform = '';
+                zone.style.width = '';
+                zone.style.height = '';
             }
         }
         function openQRScanner() {

@@ -166,7 +166,8 @@ def main():
     vw: v ? v.videoWidth : 0, vh: v ? v.videoHeight : 0,
     frames: qrTrack.frames, active: qrTrack.active, useNative: qrTrack.useNative,
     status: document.getElementById('scannerStatus').textContent,
-    transform: z.style.transform, tracking: z.classList.contains('tracking')
+    transform: z.style.transform, tracking: z.classList.contains('tracking'),
+    w: z.offsetWidth, h: z.offsetHeight
   });})()"""))
         log('start', results['start'])
 
@@ -199,6 +200,8 @@ def main():
     cy: m ? Math.round((parseFloat(m[2]) + z.offsetHeight / 2) * 10) / 10 : null,
     w: z.offsetWidth, h: z.offsetHeight,
     tracking: z.classList.contains('tracking'), lock: z.classList.contains('lock'),
+    beam: (function(){ var b = z.querySelector('.scan-beam'); var s = b ? getComputedStyle(b) : null;
+      return { exists: !!b, anim: s ? s.animationName : '', play: s ? s.animationPlayState : '' }; })(),
     ov: [ov.clientWidth, ov.clientHeight]
   });})()"""))
         log('track', results['track'])
@@ -229,6 +232,7 @@ def main():
     cx: m ? Math.round((parseFloat(m[1]) + z.offsetWidth / 2) * 10) / 10 : null,
     cy: m ? Math.round((parseFloat(m[2]) + z.offsetHeight / 2) * 10) / 10 : null,
     tracking: z.classList.contains('tracking'),
+    w: z.offsetWidth,
     homeX: Math.round(ov.clientWidth / 2 * 10) / 10,
     homeY: Math.round(ov.clientHeight * 0.44 * 10) / 10
   });})()"""))
@@ -244,6 +248,8 @@ def main():
   var z = document.getElementById('scanZone');
   return JSON.stringify({
     transform: z.style.transform, tracking: z.classList.contains('tracking'),
+    wStyle: z.style.width,
+    beamAnim: (function(){ var b = z.querySelector('.scan-beam'); return b ? getComputedStyle(b).animationName : 'missing'; })(),
     active: qrTrack.active
   });})()"""))
         log('closed', results['closed'])
@@ -290,12 +296,26 @@ def main():
     if fe:
         checks.append(('follow_err<20px', max(fe) < 20))
         checks.append(('moved_from_home>50px', (results.get('follow_err_home') or 0) > 50))
+    # Зона «зажимает» обнаруженный код: ширина рамки меньше базовой и ≈ rect + 8px
+    d = results.get('detect') or {}
+    tr = results.get('track') or {}
+    st = results.get('start') or {}
+    if st.get('w') and tr.get('w'):
+        checks.append(('zone_shrinks', tr['w'] < st['w']))
+    if d.get('ok') and (d.get('rect') or {}).get('w') and tr.get('w'):
+        checks.append(('zone_fits_code', abs(tr['w'] - (d['rect']['w'] + 8)) < 10))
+    # Анимация сканирования: луч beamSweep работает внутри рамки при слежении
+    bm = tr.get('beam') or {}
+    checks.append(('scan_beam_animation', 'beamSweep' in (bm.get('anim') or '') and bm.get('play') == 'running'))
     hm = results.get('home') or {}
     checks.append(('home_tracking_off', hm.get('tracking') is False))
     if hm.get('cx') is not None:
         checks.append(('home_pos', abs(hm['cx'] - hm['homeX']) < 5 and abs(hm['cy'] - hm['homeY']) < 5))
+    if st.get('w') and hm.get('w'):
+        checks.append(('home_size_restored', abs(hm['w'] - st['w']) <= 2))
     cl = results.get('closed') or {}
-    checks.append(('cleanup', cl.get('transform') == '' and cl.get('tracking') is False and cl.get('active') is False))
+    checks.append(('cleanup', cl.get('transform') == '' and cl.get('tracking') is False and cl.get('active') is False
+                   and cl.get('wStyle') == '' and cl.get('beamAnim') == 'none'))
     checks.append(('no_js_errors', len(results.get('consoleErrors') or []) == 0))
     print('CHECKS ' + json.dumps(checks, ensure_ascii=False), flush=True)
     failed = [c[0] for c in checks if not c[1]]
