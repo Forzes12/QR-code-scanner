@@ -18,6 +18,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" onerror="window._firebaseLoadError='app'"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js" onerror="window._firebaseLoadError='database'"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" onerror="console.warn('QR scanner library failed to load')"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" onerror="console.warn('jsQR library failed to load')"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
@@ -1263,6 +1264,17 @@
             pointer-events: none;
             z-index: 10;
             transition: opacity 0.3s;
+        }
+        /* Рамка следует за обнаруженным QR-кодом — как в Telegram */
+        #scanZone.tracking {
+            animation: none;
+            border-color: rgba(99, 102, 241, 0.95);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 36px 6px rgba(99, 102, 241, 0.65);
+        }
+        /* Найден именно код входа — рамка подсвечивается зелёным */
+        #scanZone.tracking.lock {
+            border-color: rgba(16, 185, 129, 0.95);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 40px 8px rgba(16, 185, 129, 0.7);
         }
         #scanZone.success .scan-success-overlay {
             opacity: 1;
@@ -4232,6 +4244,196 @@
         }
 
         // QR Scanner
+        // === QR-трекер: рамка следует за обнаруженным QR-кодом (как в Telegram) ===
+        var qrTrack = {
+            active: false,
+            rafId: 0,
+            detector: null,
+            useNative: false,
+            canvas: null,
+            ctx: null,
+            target: null,     // {x, y, w, h, text} — rect кода в координатах scanOverlay
+            current: null,    // сглаженная позиция центра рамки
+            lastSeen: 0,
+            busy: false,
+            lastDetect: 0,
+            frames: 0
+        };
+        var lastQRVibe = 0;
+
+        function qrTrackStart() {
+            qrTrackStop();
+            qrTrack.active = true;
+            qrTrack.target = null;
+            qrTrack.current = null;
+            qrTrack.lastSeen = 0;
+            qrTrack.busy = false;
+            qrTrack.lastDetect = 0;
+            qrTrack.frames = 0;
+            if (!qrTrack.canvas) {
+                qrTrack.canvas = document.createElement('canvas');
+                qrTrack.ctx = qrTrack.canvas.getContext('2d', { willReadFrequently: true });
+            }
+            if (!qrTrack.useNative && !qrTrack.detector && typeof BarcodeDetector !== 'undefined') {
+                try {
+                    qrTrack.detector = new BarcodeDetector({ formats: ['qr_code'] });
+                    qrTrack.useNative = true;
+                } catch (e) {
+                    qrTrack.detector = null;
+                    qrTrack.useNative = false;
+                }
+            }
+            var loop = function (now) {
+                if (!qrTrack.active || !qrScanner) {
+                    qrTrackStop();
+                    return;
+                }
+                qrTrack.frames++;
+                var zone = document.getElementById('scanZone');
+                var overlay = document.getElementById('scanOverlay');
+                var video = document.querySelector('#qrReader video');
+                if (zone && overlay && video && video.readyState >= 2 && video.videoWidth > 0) {
+                    var gap = qrTrack.useNative ? 70 : 120;
+                    if (!qrTrack.busy && now - qrTrack.lastDetect >= gap) {
+                        qrTrack.lastDetect = now;
+                        qrTrack.busy = true;
+                        qrTrackFrame(video).then(function () { qrTrack.busy = false; }, function () { qrTrack.busy = false; });
+                    }
+                    qrTrackAnimate(zone, overlay, now);
+                }
+                qrTrack.rafId = requestAnimationFrame(loop);
+            };
+            qrTrack.rafId = requestAnimationFrame(loop);
+        }
+
+        // Одна попытка обнаружения QR на кадре (video или canvas) — возвращает rect в координатах scanOverlay
+        async function qrTrackFrame(source) {
+            var overlay = document.getElementById('scanOverlay');
+            if (!overlay || !source) return null;
+            var srcW = source.videoWidth || source.width;
+            var srcH = source.videoHeight || source.height;
+            var cw = overlay.clientWidth;
+            var ch = overlay.clientHeight;
+            if (!srcW || !srcH || !cw || !ch) return null;
+
+            if (!qrTrack.canvas) {
+                qrTrack.canvas = document.createElement('canvas');
+                qrTrack.ctx = qrTrack.canvas.getContext('2d', { willReadFrequently: true });
+            }
+            var W = Math.min(qrTrack.useNative ? 720 : 480, srcW);
+            var H = Math.max(1, Math.round(srcH * (W / srcW)));
+            var canvas = qrTrack.canvas;
+            var ctx = qrTrack.ctx;
+            canvas.width = W;
+            canvas.height = H;
+            ctx.drawImage(source, 0, 0, W, H);
+
+            var hit = null;
+            if (qrTrack.useNative && qrTrack.detector) {
+                // Нативный детектор (Chrome на Android) — дёшево и точно
+                try {
+                    var found = await qrTrack.detector.detect(canvas);
+                    if (found && found.length) {
+                        var bb = found[0].boundingBox;
+                        hit = { x: bb.x, y: bb.y, w: bb.width, h: bb.height, text: found[0].rawValue || '' };
+                    }
+                } catch (e) { hit = null; }
+            } else if (typeof jsQR === 'function') {
+                // Резервный детектор (jsQR) — для браузеров без BarcodeDetector
+                try {
+                    var img = ctx.getImageData(0, 0, W, H);
+                    var res = jsQR(img.data, W, H, { inversionAttempts: 'dontInvert' });
+                    if (res && res.location) {
+                        var pts = [res.location.topLeftCorner, res.location.topRightCorner,
+                                   res.location.bottomLeftCorner, res.location.bottomRightCorner];
+                        var xs = pts.map(function (p) { return p.x; });
+                        var ys = pts.map(function (p) { return p.y; });
+                        var minX = Math.min.apply(null, xs);
+                        var maxX = Math.max.apply(null, xs);
+                        var minY = Math.min.apply(null, ys);
+                        var maxY = Math.max.apply(null, ys);
+                        hit = { x: minX, y: minY, w: maxX - minX, h: maxY - minY, text: res.data || '' };
+                    }
+                } catch (e) { hit = null; }
+            }
+            if (!hit || hit.w <= 0 || hit.h <= 0) return null;
+
+            // Кадр отображается через object-fit: cover — пересчитываем координаты в систему scanOverlay
+            var scale = Math.max(cw / srcW, ch / srcH);
+            var offX = (cw - srcW * scale) / 2;
+            var offY = (ch - srcH * scale) / 2;
+            var pad = 8;
+            var rect = {
+                x: offX + (hit.x / W) * srcW * scale - pad,
+                y: offY + (hit.y / H) * srcH * scale - pad,
+                w: (hit.w / W) * srcW * scale + pad * 2,
+                h: (hit.h / H) * srcH * scale + pad * 2,
+                text: hit.text
+            };
+            qrTrack.target = rect;
+            qrTrack.lastSeen = performance.now();
+            return rect;
+        }
+
+        // Плавная анимация: рамка едет за кодом и возвращается домой при потере
+        function qrTrackAnimate(zone, overlay, now) {
+            if (zone.classList.contains('success')) return; // финальная анимация — не мешаем
+            var cw = overlay.clientWidth;
+            var ch = overlay.clientHeight;
+            var w = zone.offsetWidth;
+            var h = zone.offsetHeight;
+            if (!w || !h) return;
+
+            if (qrTrack.target && now - qrTrack.lastSeen > 350) qrTrack.target = null;
+            var dest;
+            if (qrTrack.target) {
+                dest = {
+                    x: qrTrack.target.x + qrTrack.target.w / 2,
+                    y: qrTrack.target.y + qrTrack.target.h / 2
+                };
+            } else {
+                // Домашняя позиция — как в CSS: по центру и 44% высоты (43% на низких экранах)
+                dest = { x: cw / 2, y: ch * (window.innerHeight <= 660 ? 0.43 : 0.44) };
+            }
+            if (!qrTrack.current) qrTrack.current = { x: dest.x, y: dest.y };
+            var k = qrTrack.target ? 0.22 : 0.1;
+            qrTrack.current.x += (dest.x - qrTrack.current.x) * k;
+            qrTrack.current.y += (dest.y - qrTrack.current.y) * k;
+
+            var cx = cw >= w ? Math.min(Math.max(qrTrack.current.x, w / 2), cw - w / 2) : cw / 2;
+            var cy = ch >= h ? Math.min(Math.max(qrTrack.current.y, h / 2), ch - h / 2) : ch / 2;
+            zone.style.left = '0';
+            zone.style.top = '0';
+            zone.style.transform = 'translate3d(' + (cx - w / 2).toFixed(1) + 'px, ' + (cy - h / 2).toFixed(1) + 'px, 0)';
+
+            if (qrTrack.target) {
+                zone.classList.add('tracking');
+                if (qrTrack.target.text && qrTrack.target.text.indexOf('?qr_login=') !== -1) {
+                    zone.classList.add('lock');
+                } else {
+                    zone.classList.remove('lock');
+                }
+            } else {
+                zone.classList.remove('tracking', 'lock');
+            }
+        }
+
+        function qrTrackStop() {
+            qrTrack.active = false;
+            if (qrTrack.rafId) {
+                cancelAnimationFrame(qrTrack.rafId);
+                qrTrack.rafId = 0;
+            }
+            qrTrack.target = null;
+            qrTrack.current = null;
+            var zone = document.getElementById('scanZone');
+            if (zone) {
+                zone.classList.remove('tracking', 'lock');
+                zone.style.left = '';
+                zone.style.top = '';
+                zone.style.transform = '';
+            }
+        }
         function openQRScanner() {
             navigateTo('scanner');
             
@@ -4281,6 +4483,7 @@
                                     if (scanZone) {
                                         scanZone.classList.remove('scanIdle');
                                         scanZone.classList.add('scanning');
+                                        qrTrackStart();
                                     }
                                 }).catch(err => {
                                     console.error('Camera start error:', err);
@@ -4306,6 +4509,7 @@
         }
 
         function closeQRScanner() {
+            qrTrackStop();
             const qrReader = document.getElementById('qrReader');
             if (qrReader) {
                 qrReader.style.width = '';
@@ -4320,6 +4524,7 @@
         }
 
         function stopQRScanner() {
+            qrTrackStop();
             if (qrScanner) {
                 qrScanner.stop().then(() => {
                     qrScanner = null;
@@ -4337,12 +4542,16 @@
             
             const sessionId = decodedText.split('?qr_login=')[1].split('&')[0];
             const statusEl = document.getElementById('scannerStatus');
+            if (Date.now() - lastQRVibe > 1200) {
+                lastQRVibe = Date.now();
+                try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) {}
+            }
             statusEl.textContent = 'QR-код найден! Отправка подтверждения...';
             statusEl.className = 'scanner-status success';
             
             const scanZone = document.getElementById('scanZone');
             if (scanZone) {
-                scanZone.classList.remove('scanning', 'scanIdle');
+                scanZone.classList.remove('scanning', 'scanIdle', 'tracking', 'lock');
                 scanZone.classList.add('success');
             }
             
