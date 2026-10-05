@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#6366f1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1179,6 +1179,7 @@
             position: relative;
         }
         #qrReader {
+            position: relative;
             width: 100%;
             height: 100%;
             max-width: none;
@@ -1189,10 +1190,18 @@
             box-shadow: none;
             margin-bottom: 0;
         }
+        /* Обёртки библиотеки внутри контейнера не должны позиционировать видео */
+        #qrReader > div { position: static !important; }
+        /* Камера всегда заполняет весь экран сканера */
         #qrReader video, #qrReader img, #qrReader canvas {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
             width: 100% !important;
             height: 100% !important;
-            object-fit: cover;
+            max-width: none !important;
+            max-height: none !important;
+            object-fit: cover !important;
         }
         @keyframes scanPulse {
             0%, 100% { opacity: 0.4; }
@@ -1235,17 +1244,15 @@
         #scanZone.success .scan-success-overlay {
             opacity: 1;
         }
-        #qrReader video {
+        #qrReader video, #qrReader img, #qrReader canvas {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
             width: 100% !important;
             height: 100% !important;
-            object-fit: cover;
-            max-height: 100% !important;
-        }
-        #qrReader img, #qrReader canvas {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover;
-            max-height: 100% !important;
+            max-width: none !important;
+            max-height: none !important;
+            object-fit: cover !important;
         }
         .scanner-footer {
             position: absolute;
@@ -1843,7 +1850,7 @@
             <div id="qrReader" style="width: 100%; height: 100%; max-width: none; max-height: none; border-radius: 0; margin-bottom: 0;"></div>
             <div id="scanOverlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 5;">
                 <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55);"></div>
-                <div id="scanZone" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(320px, 65vw); height: min(320px, 65vw); border: 3px solid rgba(255,255,255,0.9); border-radius: 20px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.55); overflow: hidden;">
+                <div id="scanZone" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(340px, 78vw); height: min(340px, 78vw); border: 3px solid rgba(255,255,255,0.9); border-radius: 20px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.55); overflow: hidden;">
                     <div class="scan-success-overlay"></div>
                 </div>
             </div>
@@ -4554,6 +4561,88 @@
                 loadingScreen.style.display = 'none';
             }
         }, 20000);
+
+        // ===== Подсказка: если сайт отрисован «мелко» (режим «Для компьютера», 
+        // проигнорированный viewport или уменьшенный масштаб страницы) =====
+        (function () {
+            let scaleHintEl = null;
+
+            function isWrongScale() {
+                try {
+                    const w = document.documentElement.clientWidth || window.innerWidth;
+                    // Проверяем только на сенсорных устройствах, чтобы не мешать обычным десктопам
+                    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+                    if (!coarse) return false;
+
+                    // Страница отщипнута/уменьшена жестом масштаба
+                    if (window.visualViewport && window.visualViewport.scale && window.visualViewport.scale < 0.85) {
+                        return true;
+                    }
+
+                    const ua = navigator.userAgent || '';
+                    const isMobileUA = /Android|iPhone|iPod|iPad|Mobile/i.test(ua);
+                    // iPad в режиме «для компьютера» не считаем ошибкой
+                    const isIpadLike = navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1;
+
+                    // Телефон с десктопным User-Agent: включён режим «Для компьютера»
+                    if (!isMobileUA && !isIpadLike && w > 560) return true;
+
+                    // viewport meta игнорируется: ширина вьюпорта заметно больше ширины экрана
+                    const sw = (window.screen && window.screen.width) || 0;
+                    if (sw > 0 && sw <= 700 && w > Math.round(sw * 1.3)) return true;
+                } catch (e) {}
+                return false;
+            }
+
+            function hideScaleHint() {
+                if (scaleHintEl && scaleHintEl.parentNode) {
+                    scaleHintEl.parentNode.removeChild(scaleHintEl);
+                }
+                scaleHintEl = null;
+            }
+
+            function showScaleHint() {
+                if (scaleHintEl || !document.body) return;
+                scaleHintEl = document.createElement('div');
+                scaleHintEl.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);width:min(94vw, 480px);' +
+                    'background:linear-gradient(135deg, rgba(30,41,59,0.98), rgba(15,23,42,0.98));color:#f1f5f9;' +
+                    'border:1px solid rgba(99,102,241,0.65);border-radius:16px;padding:16px 18px;z-index:10000;' +
+                    'box-shadow:0 12px 40px rgba(0,0,0,0.55);font-family:Inter, -apple-system, sans-serif;';
+                scaleHintEl.innerHTML =
+                    '<div style="font-weight:700;font-size:1rem;margin-bottom:8px;color:#a5b4fc;">\u26A0 Сайт отображается мелко?</div>' +
+                    '<div style="font-size:0.9rem;line-height:1.5;color:#cbd5e1;margin-bottom:10px;">' +
+                    'Браузер открыл сайт в режиме <b>«Для компьютера»</b> — из-за этого кнопки и сканер выглядят мелкими. Как исправить:</div>' +
+                    '<ol style="font-size:0.9rem;line-height:1.5;color:#cbd5e1;margin:0 0 12px 20px;padding:0;">' +
+                    '<li>Нажмите <b>⋮</b> (три точки) в браузере.</li>' +
+                    '<li>Отключите <b>«Для компьютера»</b> / <b>«Desktop site»</b> / <b>«Веб-версия»</b>.</li>' +
+                    '<li>Обновите страницу (кнопка ↻).</li>' +
+                    '</ol>' +
+                    '<div style="font-size:0.8rem;line-height:1.45;color:#94a3b8;margin-bottom:12px;">' +
+                    'Если такого пункта нет — откройте ссылу в приложении Chrome (iPhone — Safari). Проверьте и масштаб страницы: ' +
+                    'два пальца на экране и разведите их, чтобы вернуть обычный размер.</div>' +
+                    '<button type="button" style="width:100%;min-height:48px;padding:12px;border:none;border-radius:12px;' +
+                    'background:linear-gradient(135deg, #6366f1, #8b5cf6);color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;">Понятно</button>';
+                scaleHintEl.querySelector('button').addEventListener('click', hideScaleHint);
+                document.body.appendChild(scaleHintEl);
+            }
+
+            function checkScaleHint() {
+                if (isWrongScale()) {
+                    showScaleHint();
+                } else {
+                    hideScaleHint();
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', checkScaleHint);
+            } else {
+                checkScaleHint();
+            }
+            // После переключения режима «Для компьютера» вьюпорт меняется без перезагрузки
+            window.addEventListener('resize', checkScaleHint);
+            window.addEventListener('orientationchange', checkScaleHint);
+        })();
     </script>
 </body>
 </html>
